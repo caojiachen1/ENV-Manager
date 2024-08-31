@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace EnvVarViewer
 {
@@ -64,6 +65,17 @@ namespace EnvVarViewer
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to set environment variable: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void PathListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (PathListBox.SelectedItem != null)
+            {
+                string selectedPath = PathListBox.SelectedItem.ToString();
+                Clipboard.SetText(selectedPath);
+                var chunked = selectedPath.Length >= 25 ? $"{selectedPath.Substring(0, 25)}..." : selectedPath;
+                StatusLabel.Content = $"Copied {chunked} to clipboard";
             }
         }
     }

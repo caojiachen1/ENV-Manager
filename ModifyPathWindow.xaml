@@ -25,10 +25,10 @@
         <ui:TitleBar Title="Modify Path" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" />
 
         <!-- Path ListBox -->
-        <ListBox Name="PathListBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="10" />
+        <ListBox Name="PathListBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="10" MouseDoubleClick="PathListBox_MouseDoubleClick" VerticalAlignment="Stretch"/>
 
         <!-- New Path TextBox -->
-        <TextBox Name="NewPathTextBox" Grid.Row="2" Grid.Column="0" Margin="10,0,10,10" Width="300"/>
+        <TextBox Name="NewPathTextBox" Grid.Row="2" Grid.Column="0" Margin="10,0,10,10"  VerticalAlignment="Stretch"/>
 
         <!-- Add Button -->
         <ui:Button Name="AddButton" Grid.Row="2" Grid.Column="1" Margin="0,0,10,10" Width="50" Click="AddButton_Click">Add</ui:Button>
@@ -37,7 +37,10 @@
         <ui:Button Name="RemoveButton" Grid.Row="2" Grid.Column="2" Margin="0,0,10,10" Width="80" Click="RemoveButton_Click">Remove</ui:Button>
 
         <!-- Save Button -->
-        <ui:Button Name="SaveButton" Grid.Row="3" Grid.Column="2" Margin="0,10,10,10" Width="60" Click="SaveButton_Click">Save</ui:Button>
+        <ui:Button Name="SaveButton" Grid.Row="3" Grid.Column="2" Margin="0,0,0,10" Width="60" Click="SaveButton_Click">Save</ui:Button>
+
+        <!-- Status Label -->
+        <Label Name="StatusLabel" Grid.Row="3" Grid.Column="0" Margin="10,10,0,10" HorizontalAlignment="Left" VerticalAlignment="Center" Content="" Foreground="Green"/>
 
     </Grid>
 </ui:FluentWindow>

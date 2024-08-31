@@ -43,7 +43,7 @@ namespace EnvVarViewer
 
         private void Elevate()
         {
-            //return; // For Debug
+            return; // For Debug
             if (!IsAdministrator())
             {
                 var processInfo = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName)
@@ -395,8 +395,9 @@ namespace EnvVarViewer
                 string selectedVar = EnvVarListBox.SelectedItem.ToString();
                 if (userEnvVars.ContainsKey(selectedVar) || systemEnvVars.ContainsKey(selectedVar) || modifiedEnvVars.ContainsKey(selectedVar))
                 {
-                    var result = MessageBox.Show($"Are you sure you want to delete the environment variable '{selectedVar}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                    if (result == MessageBoxResult.Yes)
+                    var result = new ConfirmDeleteWindow(selectedVar).ShowDialog();
+                    //var result = MessageBox.Show($"Are you sure you want to delete the environment variable '{selectedVar}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    if (result == true)
                     {
                         try
                         {
