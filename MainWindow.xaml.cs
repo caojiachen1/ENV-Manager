@@ -25,7 +25,7 @@ namespace EnvVarViewer
         {
             InitializeComponent();
             ApplicationThemeManager.Apply(ApplicationTheme.Dark, Wpf.Ui.Controls.WindowBackdropType.Mica, true);
-            Elevate();
+            //Elevate();
             modifiedEnvVars = new Dictionary<string, string>();
             deletedEnvVars = new HashSet<string>();
             LoadEnvVars();
@@ -235,23 +235,27 @@ namespace EnvVarViewer
             var selectedItem = EnvVarTreeView.SelectedItem;
             if (selectedItem is KeyValuePair<string, string> keyValuePair)
             {
-                string source = GetSource(keyValuePair.Key);
+                string source = GetSource(keyValuePair.Key, keyValuePair.Value);
                 Clipboard.SetText(keyValuePair.Value);
                 StatusLabel.Text = $"Copied {keyValuePair.Key} ({source}) to clipboard";
             }
         }
 
-        private string GetSource(string key)
+        private string GetSource(string key, string value)
         {
-            if (userEnvVars.ContainsKey(key))
+            bool isUser = userEnvVars.ContainsKey(key) && userEnvVars[key] == value;
+            bool isSystem = systemEnvVars.ContainsKey(key) && systemEnvVars[key] == value;
+            bool isModified = modifiedEnvVars.ContainsKey(key) && modifiedEnvVars[key] == value;
+
+            if (isUser)
             {
                 return "User";
             }
-            else if (systemEnvVars.ContainsKey(key))
+            else if (isSystem)
             {
                 return "System";
             }
-            else if (modifiedEnvVars.ContainsKey(key))
+            else if (isModified)
             {
                 return "Modified";
             }
