@@ -41,10 +41,10 @@ jobs:
     - name: Get previous tag
       id: get_tag
       run: |
-        if git tag --list | grep . > /dev/null; then
+        if bash -c 'git tag --list | grep . > /dev/null'; then
           echo "prev_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
         else
-          echo "prev_tag=1.0" >> $GITHUB_OUTPUT
+          echo "prev_tag=0.0.0" >> $GITHUB_OUTPUT
         fi
 
     - name: Bump version
