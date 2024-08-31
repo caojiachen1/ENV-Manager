@@ -43,7 +43,7 @@ namespace EnvVarViewer
 
         private void Elevate()
         {
-            return; // For Debug
+            //return; // For Debug
             if (!IsAdministrator())
             {
                 var processInfo = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName)
