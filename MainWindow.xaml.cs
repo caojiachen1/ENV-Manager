@@ -51,8 +51,26 @@ namespace EnvVarViewer
                     Verb = "runas",
                     UseShellExecute = true
                 };
-                Process.Start(processInfo);
-                Application.Current.Shutdown();
+
+                try
+                {
+                    Process.Start(processInfo);
+                    Application.Current.Shutdown();
+                }
+                catch (System.ComponentModel.Win32Exception ex)
+                {
+                    // 用户拒绝了权限提升请求
+                    if (ex.NativeErrorCode == 1223) // 1223 是用户取消操作的错误码
+                    {
+                        // 这里可以添加一些提示信息，告诉用户需要管理员权限才能继续
+                        //MessageBox.Show("This operation requires administrator privileges. Please run the application as an administrator.", "Permission Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else
+                    {
+                        // 其他异常处理
+                        throw;
+                    }
+                }
             }
         }
 
