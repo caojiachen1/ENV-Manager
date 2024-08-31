@@ -1,0 +1,72 @@
+name: .NET
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+    - name: Publish
+      run: dotnet publish -c Release -o ./publish
+
+    - name: Zip publish directory
+      run: 7z a publish.zip ./publish/*
+
+    - name: Generate Release Body
+      id: generate_release_body
+      run: |
+        echo "body=$(git log -1 --pretty=format:'%B')" >> $GITHUB_OUTPUT
+    
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 50  # 获取足够的提交历史记录以找到最近的标签
+
+    - name: Get previous tag
+      id: get_tag
+      run: |
+        echo "::set-output name=prev_tag::$(git describe --tags --abbrev=0)"
+
+    - name: Bump version
+      id: bump
+      run: |
+        IFS='.' read -r -a version <<< "${{ steps.get_tag.outputs.prev_tag }}"
+        ((version[1]++))
+        echo "::set-output name=new_tag::${version[0]}.${version[1]}"
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.bump.outputs.new_tag }}
+        message: 'Release ${{ steps.bump.outputs.new_tag }}'
+        draft: false
+        prerelease: false
+
+    - name: Upload Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./publish.zip
+        asset_name: env_manager_release.zip
+        asset_content_type: application/zip

@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35122.118
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ENV manager", "ENV manager.csproj", "{62DFD613-7FE6-45A2-BC77-A405883093BC}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "E:\Microsoft Visual Studio\Projects\Setup\Setup.vdproj", "{EEFBD436-47ED-41F2-8414-9F2C0AB14A16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{62DFD613-7FE6-45A2-BC77-A405883093BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62DFD613-7FE6-45A2-BC77-A405883093BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62DFD613-7FE6-45A2-BC77-A405883093BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62DFD613-7FE6-45A2-BC77-A405883093BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEFBD436-47ED-41F2-8414-9F2C0AB14A16}.Debug|Any CPU.ActiveCfg = Debug
+		{EEFBD436-47ED-41F2-8414-9F2C0AB14A16}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F5BC7783-C686-4CEB-A1A6-FB3DA0F1CC76}
+	EndGlobalSection
+EndGlobal

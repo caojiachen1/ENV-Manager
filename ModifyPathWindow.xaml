@@ -1,0 +1,43 @@
+﻿<ui:FluentWindow x:Class="EnvVarViewer.ModifyPathWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Modify Path" Height="400" Width="500"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- TitleBar -->
+            <RowDefinition Height="*" />
+            <!-- Path ListBox -->
+            <RowDefinition Height="Auto" />
+            <!-- New Path TextBox and Buttons -->
+            <RowDefinition Height="Auto" />
+            <!-- Save Button -->
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- TitleBar -->
+        <ui:TitleBar Title="Modify Path" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" />
+
+        <!-- Path ListBox -->
+        <ListBox Name="PathListBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="10" />
+
+        <!-- New Path TextBox -->
+        <TextBox Name="NewPathTextBox" Grid.Row="2" Grid.Column="0" Margin="10,0,10,10" Width="300"/>
+
+        <!-- Add Button -->
+        <ui:Button Name="AddButton" Grid.Row="2" Grid.Column="1" Margin="0,0,10,10" Width="50" Click="AddButton_Click">Add</ui:Button>
+
+        <!-- Remove Button -->
+        <ui:Button Name="RemoveButton" Grid.Row="2" Grid.Column="2" Margin="0,0,10,10" Width="80" Click="RemoveButton_Click">Remove</ui:Button>
+
+        <!-- Save Button -->
+        <ui:Button Name="SaveButton" Grid.Row="3" Grid.Column="2" Margin="0,10,10,10" Width="60" Click="SaveButton_Click">Save</ui:Button>
+
+    </Grid>
+</ui:FluentWindow>
