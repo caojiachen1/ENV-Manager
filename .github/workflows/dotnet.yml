@@ -25,34 +25,40 @@ jobs:
     - name: Publish
       run: dotnet publish -c Release -o ./publish
 
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: publish-package
+        path: ./publish 
+
     - name: Zip publish directory
       run: 7z a publish.zip ./publish/*
 
-    - name: Generate Release Body
-      id: generate_release_body
-      run: |
-        echo "body=$(git log -1 --pretty=format:'%B')" >> $GITHUB_OUTPUT
+    # - name: Generate Release Body
+    #   id: generate_release_body
+    #   run: |
+    #     echo "body=$(git log -1 --pretty=format:'%B')" >> $GITHUB_OUTPUT
     
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 50  # 获取足够的提交历史记录以找到最近的标签
+    # - name: Checkout code
+    #   uses: actions/checkout@v3
+    #   with:
+    #     fetch-depth: 50  # 获取足够的提交历史记录以找到最近的标签
 
-    - name: Get previous tag
-      id: get_tag
-      run: |
-        if (bash -c 'git tag --list | grep . > /dev/null'); then
-          echo "prev_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-        else
-          echo "prev_tag=0.0.0" >> $GITHUB_OUTPUT
-        fi
+    # - name: Get previous tag
+    #   id: get_tag
+    #   run: |
+    #     if (bash -c 'git tag --list | grep . > /dev/null'); then
+    #       echo "prev_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+    #     else
+    #       echo "prev_tag=0.0.0" >> $GITHUB_OUTPUT
+    #     fi
 
-    - name: Bump version
-      id: bump
-      run: |
-        IFS='.' read -r -a version <<< "${{ steps.get_tag.outputs.prev_tag }}"
-        ((version[1]++))
-        echo "::set-output name=new_tag::${version[0]}.${version[1]}"
+    # - name: Bump version
+    #   id: bump
+    #   run: |
+    #     IFS='.' read -r -a version <<< "${{ steps.get_tag.outputs.prev_tag }}"
+    #     ((version[1]++))
+    #     echo "::set-output name=new_tag::${version[0]}.${version[1]}"
     
     - name: Create Release
       id: create_release
@@ -60,8 +66,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.bump.outputs.new_tag }}
-        message: 'Release ${{ steps.bump.outputs.new_tag }}'
+        # tag_name: ${{ steps.bump.outputs.new_tag }}
+        tag_name: ${{ github.ref }}
+        # message: 'Release ${{ steps.bump.outputs.new_tag }}'
+        message: 'Release ${{ github.ref }}'
         draft: false
         prerelease: false
 
