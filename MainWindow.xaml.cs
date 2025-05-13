@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,28 +10,71 @@ using System.Windows.Input;
 using Wpf.Ui.Appearance;
 using System.Security.AccessControl;
 using System.Collections.Generic;
+using System.ComponentModel; // Added for INotifyPropertyChanged if needed for future binding
 //using Wpf.Ui.Controls;
 
 namespace EnvVarViewer
 {
+    public enum SortOrder
+    {
+        Ascending,
+        Descending
+    }
+
     public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         private Dictionary<string, string> userEnvVars;
         private Dictionary<string, string> systemEnvVars;
         private Dictionary<string, string> modifiedEnvVars;
         private HashSet<string> deletedEnvVars;
+        private List<Window> _windows = new List<Window>();
+        private SortOrder _currentSortOrder = SortOrder.Ascending;
 
         public MainWindow()
         {
             InitializeComponent();
             ApplicationThemeManager.Apply(ApplicationTheme.Dark, Wpf.Ui.Controls.WindowBackdropType.Mica, true);
-            //Elevate();
+            
+            // 检查是否具有管理员权限，如果没有则提权
+            if (!IsAdministrator())
+            {
+                Elevate();
+                return; // 程序将重新以管理员权限启动
+            }
+            
             modifiedEnvVars = new Dictionary<string, string>();
             deletedEnvVars = new HashSet<string>();
             LoadEnvVars();
             SearchBox.Focus(); // Set focus to the search box after initialization
             
             EnvVarTreeView.MouseDoubleClick += EnvVarTreeView_MouseDoubleClick;
+            // SortOrderComboBox.SelectionChanged += SortOrderComboBox_SelectionChanged; // Removed as ComboBox is replaced by Button
+        }
+
+        // Removed SortOrderComboBox_SelectionChanged as ComboBox is replaced by Button
+        // private void SortOrderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // {
+        //     if (SortOrderComboBox.SelectedItem is ComboBoxItem selectedItem)
+        //     {
+        //         if (Enum.TryParse<SortOrder>(selectedItem.Tag?.ToString(), out var newSortOrder))
+        //         {
+        //             ChangeSortOrder(newSortOrder);
+        //         }
+        //     }
+        // }
+
+        private void SortOrderButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSortOrder == SortOrder.Ascending)
+            {
+                ChangeSortOrder(SortOrder.Descending);
+                SortOrderButton.Content = "↓";
+            }
+            else
+            {
+                ChangeSortOrder(SortOrder.Ascending);
+                SortOrderButton.Content = "↑";
+            }
         }
 
         private bool IsAdministrator()
@@ -44,6 +87,12 @@ namespace EnvVarViewer
         private void Elevate()
         {
             //return; // For Debug
+            _windows.Clear();
+            foreach (Window window in Application.Current.Windows)
+            {
+                _windows.Add(window);
+            }
+
             if (!IsAdministrator())
             {
                 var processInfo = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName)
@@ -56,6 +105,11 @@ namespace EnvVarViewer
                 {
                     Process.Start(processInfo);
                     Application.Current.Shutdown();
+
+                    //foreach (Window window in _windows)
+                    //{
+                    //    window.Show();
+                    //}
                 }
                 catch (System.ComponentModel.Win32Exception ex)
                 {
@@ -89,12 +143,21 @@ namespace EnvVarViewer
 
         private void UpdateListBox()
         {
-            var combinedEnvVars = userEnvVars.Keys
+            var query = userEnvVars.Keys
                 .Union(systemEnvVars.Keys)
                 .Union(modifiedEnvVars.Keys)
-                .Except(deletedEnvVars)
-                .OrderBy(k => k)
-                .ToDictionary(k => k, k =>
+                .Except(deletedEnvVars);
+
+            if (_currentSortOrder == SortOrder.Ascending)
+            {
+                query = query.OrderBy(k => k);
+            }
+            else
+            {
+                query = query.OrderByDescending(k => k);
+            }
+
+            var combinedEnvVars = query.ToDictionary(k => k, k =>
                 {
                     string userValue = userEnvVars.ContainsKey(k) ? userEnvVars[k] : null;
                     string systemValue = systemEnvVars.ContainsKey(k) ? systemEnvVars[k] : null;
@@ -113,6 +176,13 @@ namespace EnvVarViewer
                 });
 
             EnvVarListBox.ItemsSource = combinedEnvVars.Keys;
+
+            // Preserve selection if possible after re-sorting/filtering
+            string currentSearchTerm = SearchBox.Text;
+            if (!string.IsNullOrEmpty(currentSearchTerm))
+            {
+                SearchBox_TextChanged(SearchBox, null); // Re-apply search filter which also considers sorting
+            }
         }
 
         private string FormatValue(string value)
@@ -170,46 +240,82 @@ namespace EnvVarViewer
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchTerm = SearchBox.Text.ToLower();
-            var filteredKeys = userEnvVars.Keys
+            var query = userEnvVars.Keys
                 .Union(systemEnvVars.Keys)
                 .Union(modifiedEnvVars.Keys)
                 .Except(deletedEnvVars)
-                .Where(k => k.ToLower().Contains(searchTerm))
-                .OrderBy(k => k);
-            EnvVarListBox.ItemsSource = filteredKeys;
+                .Where(k => k.ToLower().Contains(searchTerm));
+
+            if (_currentSortOrder == SortOrder.Ascending)
+            {
+                query = query.OrderBy(k => k);
+            }
+            else
+            {
+                query = query.OrderByDescending(k => k);
+            }
+            EnvVarListBox.ItemsSource = query;
         }
+
+        // Placeholder for SortOrder changed event handler (will be connected to UI element)
+        public void ChangeSortOrder(SortOrder newOrder)
+        {
+            if (_currentSortOrder != newOrder)
+            {
+                _currentSortOrder = newOrder;
+                UpdateListBox(); // Refresh the list with the new sort order
+                // If search text exists, re-apply search to maintain filtering with new sort order
+                if (!string.IsNullOrWhiteSpace(SearchBox.Text))
+                {
+                    SearchBox_TextChanged(SearchBox, null); 
+                }
+            }
+        }
+
+        //private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    LoadEnvVars();
+        //    SearchBox.Text = ""; // 清空搜索栏
+        //    StatusLabel.Text = "";
+        //    SystemEnvList.Items.Clear();
+        //    UserEnvList.Items.Clear();
+        //}
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-            LoadEnvVars();
+            string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
+
+            LoadEnvVars(); // This calls UpdateListBox(), which re-populates EnvVarListBox.ItemsSource
+
             SearchBox.Text = ""; // 清空搜索栏
             StatusLabel.Text = "";
-            SystemEnvList.Items.Clear();
+            
+            // Clear the TreeView display first. If no item is re-selected, it remains empty.
+            SystemEnvList.Items.Clear(); 
             UserEnvList.Items.Clear();
+
+            if (!string.IsNullOrEmpty(previouslySelectedVarKey))
+            {
+                // EnvVarListBox.ItemsSource is IEnumerable<string> from UpdateListBox()
+                if (EnvVarListBox.ItemsSource is System.Collections.Generic.IEnumerable<string> items && items.Contains(previouslySelectedVarKey))
+                {
+                    EnvVarListBox.SelectedItem = previouslySelectedVarKey;
+                    // Setting SelectedItem will trigger EnvVarListBox_SelectionChanged,
+                    // which will update the UserEnvList and SystemEnvList in the TreeView with new values.
+                }
+                // If the previously selected item no longer exists (e.g., variable deleted),
+                // or if ItemsSource is not what we expect, the TreeView remains empty as cleared above.
+            }
         }
 
-        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        private void BackupRestoreButton_Click(object sender, RoutedEventArgs e)
         {
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                DefaultExt = ".txt"
-            };
-
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                using (StreamWriter file = new StreamWriter(saveFileDialog.FileName))
-                {
-                    foreach (var kv in userEnvVars)
-                    {
-                        file.WriteLine($"User: {kv.Key}={kv.Value}");
-                    }
-                    foreach (var kv in systemEnvVars)
-                    {
-                        file.WriteLine($"System: {kv.Key}={kv.Value}");
-                    }
-                }
-            }
+            Elevate(); // 确保有管理员权限
+            var backupRestoreWindow = new BackupRestoreWindow(userEnvVars, systemEnvVars);
+            backupRestoreWindow.ShowDialog();
+            
+            // 窗口关闭后刷新环境变量列表，以显示可能的更改
+            RefreshButton_Click(sender, e);
         }
 
         private void EnvVarListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -442,6 +548,20 @@ namespace EnvVarViewer
                 else
                 {
                     StatusLabel.Text = $"Environment variable {selectedVar} not found";
+                }
+            }
+        }
+        private void PinToTop_Click(object sender, RoutedEventArgs e)
+        {
+            if (EnvVarListBox.SelectedItem != null)
+            {
+                string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                var items = EnvVarListBox.ItemsSource as IEnumerable<string>;
+                if (items != null && items.Contains(selectedVar))
+                {
+                    var newOrder = items.OrderByDescending(item => item == selectedVar).ToList();
+                    EnvVarListBox.ItemsSource = newOrder;
+                    EnvVarListBox.SelectedItem = selectedVar;
                 }
             }
         }
