@@ -7,6 +7,7 @@
     xmlns:tray="http://schemas.lepo.co/wpfui/2022/xaml/tray"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:local="clr-namespace:WpfApp1"
+    xmlns:viewmodels="clr-namespace:EnvVarViewer.ViewModels"
     Title="Environment Variable Manager" 
     Height="450" Width="800"
     d:DesignHeight="450"
@@ -53,7 +54,7 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Text="Search:" Foreground="White" Grid.Column="0" HorizontalAlignment="Left" Margin="10,10,0,10" Width="50" VerticalAlignment="Center"/>
-            <ui:TextBox x:Name="SearchBox" PlaceholderText="Search..." VerticalAlignment="Center" TextChanged="SearchBox_TextChanged" Grid.Column="1" Margin="5,0,10,0"/>
+            <ui:TextBox x:Name="SearchBox" PlaceholderText="Search..." VerticalAlignment="Center" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Margin="5,0,10,0"/>
             
             <ui:Button x:Name="SortOrderButton" Content="↑" Click="SortOrderButton_Click" Grid.Column="2" VerticalAlignment="Center" Margin="5,0,10,0" Width="40" Height="35"/>
 
@@ -62,12 +63,15 @@
                 <ui:Button Content="Backup/Restore" Click="BackupRestoreButton_Click" Width="120" Height="35" Margin="10,0"/>
                 <ui:Button Content="Add" Click="AddButton_Click" Width="50" Height="35" Margin="0,0,10,0"/>
                 <ui:Button Content="Modify" Click="ModifyButton_Click" Width="70" Height="35" Margin="0,0,10,0"/>
-                <ui:Button Content="Delete" Click="DeleteButton_Click" Width="70" Height="35"/>
+                <ui:Button Content="Delete" Click="DeleteButton_Click" Width="70" Height="35" Margin="0,0,10,0"/>
+            <!--<ui:Button Content="Settings" Click="SettingsButton_Click" Width="80" Height="35" /> -->
             </StackPanel>
         </Grid>
 
         <!-- ListBox for Environment Variables -->
         <ListBox x:Name="EnvVarListBox" Grid.Row="2" Grid.Column="0" 
+                 ItemsSource="{Binding EnvVarList}"
+                 SelectedItem="{Binding SelectedEnvVar}"
                  SelectionChanged="EnvVarListBox_SelectionChanged" 
                  MouseDoubleClick="EnvVarListBox_MouseDoubleClick" 
                  HorizontalAlignment="Stretch" 
@@ -107,6 +111,7 @@
 
         <!-- Status Label -->
         <TextBlock x:Name="StatusLabel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+                   Text="{Binding StatusText}"
                    Foreground="Green" FontSize="14" 
                    Margin="20,0,0,10"
                    HorizontalAlignment="Left"/>

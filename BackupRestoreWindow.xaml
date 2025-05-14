@@ -35,11 +35,11 @@
         <!-- 备份选项 -->
         <GroupBox Header="Backup Options" Grid.Row="1" Margin="0,10,0,0">
             <StackPanel Margin="10">
-                <CheckBox x:Name="BackupUserVarsCheckBox" Content="User Var" IsChecked="True" Margin="0,5,0,0"/>
-                <CheckBox x:Name="BackupSystemVarsCheckBox" Content="Sys Var" IsChecked="True" Margin="0,5,0,0"/>
+                <CheckBox Content="User Var" IsChecked="{Binding BackupUserVars}" Margin="0,5,0,0"/>
+                <CheckBox Content="Sys Var" IsChecked="{Binding BackupSystemVars}" Margin="0,5,0,0"/>
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                    <ui:Button x:Name="BackupButton" Content="Create backup" Click="BackupButton_Click" Width="120" Height="35" Margin="0,0,10,0"/>
-                    <TextBlock x:Name="BackupStatusText" VerticalAlignment="Center" Foreground="Green"/>
+                    <ui:Button Content="Create backup" Click="BackupButton_Click" Width="120" Height="35" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding BackupStatus}" VerticalAlignment="Center" Foreground="Green"/>
                 </StackPanel>
             </StackPanel>
         </GroupBox>
@@ -47,16 +47,16 @@
         <!-- 恢复选项 -->
         <GroupBox Header="Restore Options" Grid.Row="2" Margin="0,10,0,0">
             <StackPanel Margin="10">
-                <CheckBox x:Name="RestoreUserVarsCheckBox" Content="User Var" IsChecked="True" Margin="0,5,0,0"/>
-                <CheckBox x:Name="RestoreSystemVarsCheckBox" Content="Sys Var" IsChecked="True" Margin="0,5,0,0"/>
-                <CheckBox x:Name="OverwriteExistingCheckBox" Content="Override existing" IsChecked="True" Margin="0,5,0,0"/>
+                <CheckBox x:Name="RestoreUserVarsCheckBox" Content="User Var" IsChecked="{Binding RestoreUserVars}" Margin="0,5,0,0"/>
+                <CheckBox x:Name="RestoreSystemVarsCheckBox" Content="Sys Var" IsChecked="{Binding RestoreSystemVars}" Margin="0,5,0,0"/>
+                <CheckBox x:Name="OverwriteExistingCheckBox" Content="Override existing" IsChecked="{Binding OverwriteExisting}" Margin="0,5,0,0"/>
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                     <ui:TextBox x:Name="RestoreFilePathTextBox" PlaceholderText="Choose backup" Width="350" IsReadOnly="True" Margin="0,0,10,0"/>
                     <ui:Button x:Name="BrowseButton" Content="Explore" Click="BrowseButton_Click" Width="80" Height="35"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                    <ui:Button x:Name="RestoreButton" Content="Restore" Click="RestoreButton_Click" Width="120" Height="35" Margin="0,0,10,0" IsEnabled="False"/>
-                    <TextBlock x:Name="RestoreStatusText" VerticalAlignment="Center" Foreground="Green"/>
+                    <ui:Button x:Name="RestoreButton" Content="Restore from backup" Click="RestoreButton_Click" Width="150" Height="35" Margin="0,0,10,0"/>
+                    <ui:TextBlock x:Name="RestoreStatusText" Text="{Binding RestoreStatus}" VerticalAlignment="Center" Foreground="Green"/>
                 </StackPanel>
             </StackPanel>
         </GroupBox>

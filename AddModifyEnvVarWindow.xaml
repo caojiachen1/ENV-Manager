@@ -28,7 +28,7 @@
         <ComboBox x:Name="ScopeComboBox" Grid.Row="3" Grid.Column="1" Margin="5,18,10,0">
             <ComboBoxItem Content="Process"/>
             <ComboBoxItem Content="User"/>
-            <ComboBoxItem Content="Machine"/>
+            <ComboBoxItem Content="System"/>
         </ComboBox>
 
         <ui:TitleBar

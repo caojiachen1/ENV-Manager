@@ -47,14 +47,29 @@ namespace EnvVarViewer
             string name = NameTextBox.Text;
             string value = ValueTextBox.Text;
             string scope = ((ComboBoxItem)ScopeComboBox.SelectedItem).Content.ToString();
+            if (scope == "System") scope = "Machine";
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(value))
             {
                 MessageBox.Show("Name and Value cannot be empty.");
                 return;
             }
+            
+            // 检查变量名是否已存在
+            if (originalName == null && (userEnvVars.ContainsKey(name) || systemEnvVars.ContainsKey(name) || modifiedEnvVars.ContainsKey(name)))
+            {
+                MessageBox.Show($"Environment variable '{name}' already exists.");
+                return;
+            }
 
-            EnvironmentVariableTarget target = scope == "User" ? EnvironmentVariableTarget.User : EnvironmentVariableTarget.Machine;
+            EnvironmentVariableTarget target = new EnvironmentVariableTarget();
+            target = scope switch
+            {
+                "Process" => EnvironmentVariableTarget.Process,
+                "User" => EnvironmentVariableTarget.User,
+                "System" => EnvironmentVariableTarget.Machine,
+                _ => target
+            };
 
             try
             {

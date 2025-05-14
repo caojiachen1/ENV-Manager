@@ -4,24 +4,25 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Security.Principal;
+using EnvVarViewer.ViewModels;
 
 namespace EnvVarViewer
 {
     public partial class BackupRestoreWindow : Wpf.Ui.Controls.FluentWindow
     {
-        private Dictionary<string, string> userEnvVars;
-        private Dictionary<string, string> systemEnvVars;
-        private string selectedBackupFile;
-        private Dictionary<string, string> previewUserVars;
-        private Dictionary<string, string> previewSystemVars;
+        public MainWindowViewModel MainWindowViewModel { get; }
+        public ViewModels.BackupRestoreWindowViewModel ViewModel { get; private set; }
+        public string selectedBackupFile;
+        private Dictionary<string, string> previewUserVars = new Dictionary<string, string>();
+        private Dictionary<string, string> previewSystemVars = new Dictionary<string, string>();
 
-        public BackupRestoreWindow(Dictionary<string, string> userVars, Dictionary<string, string> systemVars)
+        // public BackupRestoreWindow(Dictionary<string, string> userVars, Dictionary<string, string> systemVars)
+        public BackupRestoreWindow(ViewModels.MainWindowViewModel viewModel)
         {
             InitializeComponent();
-            userEnvVars = userVars;
-            systemEnvVars = systemVars;
-            previewUserVars = new Dictionary<string, string>();
-            previewSystemVars = new Dictionary<string, string>();
+            this.MainWindowViewModel = viewModel;
+            ViewModel = new ViewModels.BackupRestoreWindowViewModel(viewModel);
+            DataContext = ViewModel;
         }
 
         private bool IsAdministrator()
@@ -31,55 +32,55 @@ namespace EnvVarViewer
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        private void ExportButton_Click(object sender, RoutedEventArgs e)
-        {
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
-                DefaultExt = ".txt",
-                Title = "Export Environment Variables"
-            };
+        // private void ExportButton_Click(object sender, RoutedEventArgs e)
+        // {
+        //     var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+        //     {
+        //         Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+        //         DefaultExt = ".txt",
+        //         Title = "Export Environment Variables"
+        //     };
 
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                try
-                {
-                    using (StreamWriter file = new StreamWriter(saveFileDialog.FileName))
-                    {
-                        // Write file header
-                        file.WriteLine($"Environment Variables Export - {DateTime.Now}\n");
+        //     if (saveFileDialog.ShowDialog() == true)
+        //     {
+        //         try
+        //         {
+        //             using (StreamWriter file = new StreamWriter(saveFileDialog.FileName))
+        //             {
+        //                 // Write file header
+        //                 file.WriteLine($"Environment Variables Export - {DateTime.Now}\n");
 
-                        // 导出用户环境变量
-                        if (BackupUserVarsCheckBox.IsChecked == true)
-                        {
-                            file.WriteLine("[User Variables]");
-                            foreach (var kv in userEnvVars)
-                            {
-                                file.WriteLine($"{kv.Key}={kv.Value}");
-                            }
-                            file.WriteLine();
-                        }
+        //                 // 导出用户环境变量
+        //                 if (ViewModel.BackupUserVars)
+        //                 {
+        //                     file.WriteLine("[User Variables]");
+        //                     foreach (var kv in MainWindowViewModel.UserEnvVars)
+        //                     {
+        //                         file.WriteLine($"{kv.Key}={kv.Value}");
+        //                     }
+        //                     file.WriteLine();
+        //                 }
 
-                        // 导出系统环境变量
-                        if (BackupSystemVarsCheckBox.IsChecked == true)
-                        {
-                            file.WriteLine("[System Variables]");
-                            foreach (var kv in systemEnvVars)
-                            {
-                                file.WriteLine($"{kv.Key}={kv.Value}");
-                            }
-                        }
-                    }
+        //                 // 导出系统环境变量
+        //                 if (ViewModel.BackupSystemVars)
+        //                 {
+        //                     file.WriteLine("[System Variables]");
+        //                     foreach (var kv in MainWindowViewModel.SystemEnvVars)
+        //                     {
+        //                         file.WriteLine($"{kv.Key}={kv.Value}");
+        //                     }
+        //                 }
+        //             }
 
-                    BackupStatusText.Text = "Export Successful!";
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"An error occurred during the export process: {ex.Message}", "Export error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    BackupStatusText.Text = "Export failed";
-                }
-            }
-        }
+        //             ViewModel.BackupStatus = "Export Successful!";
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             MessageBox.Show($"An error occurred during the export process: {ex.Message}", "Export error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //             ViewModel.BackupStatus = "Export failed";
+        //         }
+        //     }
+        // }
 
         private void BackupButton_Click(object sender, RoutedEventArgs e)
         {
@@ -114,12 +115,12 @@ namespace EnvVarViewer
                         }
 
                         // 备份用户环境变量
-                        if (BackupUserVarsCheckBox.IsChecked == true)
+                        if (ViewModel.BackupUserVars)
                         {
                             if (isTxtFormat)
                             {
                                 file.WriteLine("[User Variables]");
-                                foreach (var kv in userEnvVars)
+                                foreach (var kv in MainWindowViewModel.UserEnvVars)
                                 {
                                     file.WriteLine($"{kv.Key}={kv.Value}");
                                 }
@@ -128,7 +129,7 @@ namespace EnvVarViewer
                             else
                             {
                                 file.WriteLine("[USER_VARIABLES]");
-                                foreach (var kv in userEnvVars)
+                                foreach (var kv in MainWindowViewModel.UserEnvVars)
                                 {
                                     file.WriteLine($"USER:{kv.Key}={kv.Value}");
                                 }
@@ -137,12 +138,12 @@ namespace EnvVarViewer
                         }
 
                         // 备份系统环境变量
-                        if (BackupSystemVarsCheckBox.IsChecked == true)
+                        if (ViewModel.BackupSystemVars)
                         {
                             if (isTxtFormat)
                             {
                                 file.WriteLine("[System Variables]");
-                                foreach (var kv in systemEnvVars)
+                                foreach (var kv in MainWindowViewModel.SystemEnvVars)
                                 {
                                     file.WriteLine($"{kv.Key}={kv.Value}");
                                 }
@@ -150,7 +151,7 @@ namespace EnvVarViewer
                             else
                             {
                                 file.WriteLine("[SYSTEM_VARIABLES]");
-                                foreach (var kv in systemEnvVars)
+                                foreach (var kv in MainWindowViewModel.SystemEnvVars)
                                 {
                                     file.WriteLine($"SYSTEM:{kv.Key}={kv.Value}");
                                 }
@@ -158,12 +159,12 @@ namespace EnvVarViewer
                         }
                     }
 
-                    BackupStatusText.Text = "Backup Successful!";
+                    ViewModel.BackupStatus = "Backup Successful!";
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    BackupStatusText.Text = "Backup failed";
+                    ViewModel.BackupStatus = "Backup failed";
                 }
             }
         }
@@ -310,12 +311,10 @@ namespace EnvVarViewer
                 int restoredCount = 0;
 
                 // 恢复用户环境变量
-                if (RestoreUserVarsCheckBox.IsChecked == true && previewUserVars.Count > 0)
-                {
-                    foreach (var kv in previewUserVars)
-                    {
-                        if (OverwriteExistingCheckBox.IsChecked == true || !userEnvVars.ContainsKey(kv.Key))
-                        {
+                if (RestoreUserVarsCheckBox.IsChecked == true && previewUserVars.Count > 0) {
+                    foreach (var kv in previewUserVars) {
+                        if ((OverwriteExistingCheckBox.IsChecked == true || !MainWindowViewModel.UserEnvVars.ContainsKey(kv.Key)) &&
+                            (!MainWindowViewModel.UserEnvVars.ContainsKey(kv.Key) || MainWindowViewModel.UserEnvVars[kv.Key] != kv.Value)) {
                             Environment.SetEnvironmentVariable(kv.Key, kv.Value, EnvironmentVariableTarget.User);
                             restoredCount++;
                         }
@@ -323,12 +322,10 @@ namespace EnvVarViewer
                 }
 
                 // 恢复系统环境变量
-                if (RestoreSystemVarsCheckBox.IsChecked == true && previewSystemVars.Count > 0)
-                {
-                    foreach (var kv in previewSystemVars)
-                    {
-                        if (OverwriteExistingCheckBox.IsChecked == true || !systemEnvVars.ContainsKey(kv.Key))
-                        {
+                if (RestoreSystemVarsCheckBox.IsChecked == true && previewSystemVars.Count > 0) {
+                    foreach (var kv in previewSystemVars) {
+                        if ((OverwriteExistingCheckBox.IsChecked == true || !MainWindowViewModel.SystemEnvVars.ContainsKey(kv.Key)) &&
+                            (!MainWindowViewModel.SystemEnvVars.ContainsKey(kv.Key) || MainWindowViewModel.SystemEnvVars[kv.Key] != kv.Value)) {
                             Environment.SetEnvironmentVariable(kv.Key, kv.Value, EnvironmentVariableTarget.Machine);
                             restoredCount++;
                         }
