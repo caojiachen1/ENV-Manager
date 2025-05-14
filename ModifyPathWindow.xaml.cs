@@ -54,6 +54,10 @@ namespace EnvVarViewer
             this.Close();
         }
 
+        /// <summary>
+        /// Updates the PATH environment variable
+        /// </summary>
+        /// <param name="value">New PATH value to set</param>
         private void SetEnvironmentVariable(string value)
         {
             try

@@ -14,7 +14,7 @@ namespace EnvVarViewer
             DataContext = this;
             VariableName = variableName;
             
-            // Check if it's a system critical environment variable
+            // Validate if the variable is a Windows system critical environment variable
             string upperVarName = variableName.ToUpper();
             if (upperVarName == "PATH" || 
                 upperVarName == "TEMP" || 
@@ -35,8 +35,8 @@ namespace EnvVarViewer
                 return;
             }
 
-            // Check important environment variables
-            // Check if it's a CUDA-related environment variable
+            // Check for important development environment variables
+            // First check for CUDA-related variables (NVIDIA GPU development)
             if (variableName.ToUpper().StartsWith("CUDA_PATH"))
             {
                 VariableDescription = "Installation path for CUDA Development Toolkit, used for NVIDIA GPU programming and deep learning frameworks.";
@@ -84,12 +84,20 @@ namespace EnvVarViewer
             }
         }
 
+        /// <summary>
+        /// Handles the confirm button click event
+        /// Sets dialog result to true and closes the window
+        /// </summary>
         private void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
             Close();
         }
 
+        /// <summary>
+        /// Handles the cancel button click event
+        /// Sets dialog result to false and closes the window
+        /// </summary>
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;

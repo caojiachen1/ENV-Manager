@@ -16,6 +16,13 @@ namespace EnvVarViewer
         public event EventHandler EnvVarAdded;
         public event EventHandler EnvVarModified;
 
+        /// <summary>
+        /// Initializes a new instance of the AddModifyEnvVarWindow class
+        /// </summary>
+        /// <param name="userEnvVars">User environment variables</param>
+        /// <param name="systemEnvVars">System environment variables</param>
+        /// <param name="modifiedEnvVars">Modified environment variables</param>
+        /// <param name="deletedEnvVars">Deleted environment variables</param>
         public AddModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, Dictionary<string, string> modifiedEnvVars, HashSet<string> deletedEnvVars)
         {
             InitializeComponent();
@@ -26,6 +33,11 @@ namespace EnvVarViewer
             ScopeComboBox.SelectedIndex = 0; // Default to User
         }
 
+        /// <summary>
+        /// Initializes a new instance for modifying an existing environment variable
+        /// </summary>
+        /// <param name="name">Name of the environment variable to modify</param>
+        /// <param name="value">New value for the environment variable</param>
         public AddModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, Dictionary<string, string> modifiedEnvVars, HashSet<string> deletedEnvVars, string name, string value)
             : this(userEnvVars, systemEnvVars, modifiedEnvVars, deletedEnvVars)
         {
@@ -42,6 +54,9 @@ namespace EnvVarViewer
             }
         }
 
+        /// <summary>
+        /// Handles the save button click event to add or modify an environment variable
+        /// </summary>
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             string name = NameTextBox.Text;
@@ -55,7 +70,7 @@ namespace EnvVarViewer
                 return;
             }
             
-            // 检查变量名是否已存在
+            // Check if the variable name already exists
             if (originalName == null && (userEnvVars.ContainsKey(name) || systemEnvVars.ContainsKey(name) || modifiedEnvVars.ContainsKey(name)))
             {
                 MessageBox.Show($"Environment variable '{name}' already exists.");

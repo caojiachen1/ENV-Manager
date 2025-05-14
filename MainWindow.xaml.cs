@@ -36,53 +36,33 @@ namespace EnvVarViewer
 
         public MainWindow()
         {
+            // Initialize window components and apply dark theme with Mica backdrop
             InitializeComponent();
             ApplicationThemeManager.Apply(ApplicationTheme.Dark, Wpf.Ui.Controls.WindowBackdropType.Mica, true);
             
+            // Initialize ViewModel and set as DataContext
             ViewModel = new ViewModels.MainWindowViewModel();
             DataContext = ViewModel;
             
-            // 检查是否具有管理员权限，如果没有则提权
+            // Check if running as administrator, if not elevate privileges
             if (!ViewModel.IsAdministrator())
             {
                 ViewModel.Elevate();
-                return; // 程序将重新以管理员权限启动
+                return; // The program will restart with admin privileges
             }
             
             SearchBox.Focus(); // Set focus to the search box after initialization
             EnvVarTreeView.MouseDoubleClick += EnvVarTreeView_MouseDoubleClick;
-            // SortOrderComboBox.SelectionChanged += SortOrderComboBox_SelectionChanged; // Removed as ComboBox is replaced by Button
         }
 
-        // Removed SortOrderComboBox_SelectionChanged as ComboBox is replaced by Button
-        // private void SortOrderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        // {
-        //     if (SortOrderComboBox.SelectedItem is ComboBoxItem selectedItem)
-        //     {
-        //         if (Enum.TryParse<SortOrder>(selectedItem.Tag?.ToString(), out var newSortOrder))
-        //         {
-        //             ChangeSortOrder(newSortOrder);
-        //         }
-        //     }
-        // }
-
-        // private void SortOrderButton_Click(object sender, RoutedEventArgs e)
-        // {
-        //     if (_currentSortOrder == SortOrder.Ascending)
-        //     {
-        //         ChangeSortOrder(SortOrder.Descending);
-        //         SortOrderButton.Content = "↓";
-        //     }
-        //     else
-        //     {
-        //         ChangeSortOrder(SortOrder.Ascending);
-        //         SortOrderButton.Content = "↑";
-        //     }
-        // }
+        /// <summary>
+        /// Handles selection changes in the environment variables list
+        /// </summary>
         private void EnvVarListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (EnvVarListBox.SelectedItem != null)
             {
+                // Get the selected environment variable name
                 string selectedVar = EnvVarListBox.SelectedItem.ToString();
                 if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar) || ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
                 {
@@ -130,22 +110,17 @@ namespace EnvVarViewer
             SortOrderButton.Content = ViewModel.CurrentSortOrder == SortOrder.Ascending ? "↑" : "↓";
         }
 
-        //private void RefreshButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    LoadEnvVars();
-        //    SearchBox.Text = ""; // 清空搜索栏
-        //    StatusLabel.Text = "";
-        //    SystemEnvList.Items.Clear();
-        //    UserEnvList.Items.Clear();
-        //}
-
+        /// <summary>
+        /// Refreshes the environment variables list and maintains selection
+        /// </summary>
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
+            // Store currently selected variable before refresh
             string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
 
             ViewModel.LoadEnvVars(); // This calls UpdateListBox(), which re-populates EnvVarListBox.ItemsSource
 
-            SearchBox.Text = ""; // 清空搜索栏
+            SearchBox.Text = ""; // Clear search box
             StatusLabel.Text = "";
             
             // Clear the TreeView display first. If no item is re-selected, it remains empty.
@@ -170,11 +145,11 @@ namespace EnvVarViewer
 
         private void BackupRestoreButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.Elevate(); // 确保有管理员权限
+            ViewModel.Elevate(); // Ensure admin privileges
             var backupRestoreWindow = new BackupRestoreWindow(ViewModel);
             backupRestoreWindow.ShowDialog();
             
-            // 窗口关闭后刷新环境变量列表，以显示可能的更改
+            // Refresh environment variables after window closes to show possible changes
             RefreshButton_Click(sender, e);
         }
 

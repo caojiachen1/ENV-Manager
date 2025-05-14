@@ -30,6 +30,9 @@ namespace EnvVarViewer.ViewModels
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Initializes a new instance of the MainWindowViewModel class
+        /// </summary>
         public MainWindowViewModel()
         {
             _modifiedEnvVars = new Dictionary<string, string>();
@@ -90,6 +93,9 @@ namespace EnvVarViewer.ViewModels
             }
         }
 
+        /// <summary>
+        /// Loads environment variables from both user and system scope
+        /// </summary>
         public void LoadEnvVars()
         {
             _userEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User)
@@ -103,6 +109,9 @@ namespace EnvVarViewer.ViewModels
             UpdateListBox();
         }
 
+        /// <summary>
+        /// Updates the environment variables list based on current filters and sorting
+        /// </summary>
         public void UpdateListBox()
         {
             var query = _userEnvVars.Keys
@@ -122,6 +131,10 @@ namespace EnvVarViewer.ViewModels
             EnvVarList = query.ToList();
         }
 
+        /// <summary>
+        /// Checks if current user has administrator privileges
+        /// </summary>
+        /// <returns>True if user is administrator</returns>
         public bool IsAdministrator()
         {
             var identity = WindowsIdentity.GetCurrent();
@@ -129,6 +142,9 @@ namespace EnvVarViewer.ViewModels
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
+        /// <summary>
+        /// Attempts to elevate application privileges by restarting as administrator
+        /// </summary>
         public void Elevate()
         {
             if (!IsAdministrator())
@@ -148,7 +164,7 @@ namespace EnvVarViewer.ViewModels
                 {
                     if (ex.NativeErrorCode == 1223)
                     {
-                        StatusText = "需要管理员权限才能继续操作";
+                        StatusText = "Administrator privileges required to continue";
                     }
                     else
                     {

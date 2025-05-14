@@ -33,14 +33,14 @@
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Title Bar -->
+        <!-- Main Title Bar with application icon -->
         <ui:TitleBar
             Title="Environment Variable Manager"
             Grid.Row="0"
             Grid.ColumnSpan="2"
             Icon="icon.ico" />
 
-        <!-- Search Box and Buttons -->
+        <!-- Search and Action Buttons Panel -->
         <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -68,7 +68,7 @@
             </StackPanel>
         </Grid>
 
-        <!-- ListBox for Environment Variables -->
+        <!-- Environment Variables List (Left Panel) -->
         <ListBox x:Name="EnvVarListBox" Grid.Row="2" Grid.Column="0" 
                  ItemsSource="{Binding EnvVarList}"
                  SelectedItem="{Binding SelectedEnvVar}"
@@ -83,7 +83,7 @@
             </ListBox.ContextMenu>
         </ListBox>
 
-        <!-- TreeView for Environment Variables -->
+        <!-- Environment Variables Tree View (Right Panel) -->
         <TreeView x:Name="EnvVarTreeView" Grid.Row="2" Grid.Column="1" Margin="10,10,10,10" AllowDrop="True">
             <TreeViewItem x:Name="UserEnvList" Header="User" IsExpanded="True">
                 <TreeViewItem.ItemTemplate>
@@ -109,7 +109,7 @@
             </TreeViewItem>
         </TreeView>
 
-        <!-- Status Label -->
+        <!-- Status Bar for displaying operation messages -->
         <TextBlock x:Name="StatusLabel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
                    Text="{Binding StatusText}"
                    Foreground="Green" FontSize="14" 

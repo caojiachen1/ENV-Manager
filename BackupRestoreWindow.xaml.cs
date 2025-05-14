@@ -17,6 +17,10 @@ namespace EnvVarViewer
         private Dictionary<string, string> previewSystemVars = new Dictionary<string, string>();
 
         // public BackupRestoreWindow(Dictionary<string, string> userVars, Dictionary<string, string> systemVars)
+        /// <summary>
+        /// Initializes a new instance of the BackupRestoreWindow
+        /// </summary>
+        /// <param name="viewModel">The main window view model</param>
         public BackupRestoreWindow(ViewModels.MainWindowViewModel viewModel)
         {
             InitializeComponent();
@@ -25,6 +29,10 @@ namespace EnvVarViewer
             DataContext = ViewModel;
         }
 
+        /// <summary>
+        /// Checks if current user has administrator privileges
+        /// </summary>
+        /// <returns>True if user is administrator</returns>
         private bool IsAdministrator()
         {
             var identity = WindowsIdentity.GetCurrent();
@@ -32,56 +40,11 @@ namespace EnvVarViewer
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        // private void ExportButton_Click(object sender, RoutedEventArgs e)
-        // {
-        //     var saveFileDialog = new Microsoft.Win32.SaveFileDialog
-        //     {
-        //         Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
-        //         DefaultExt = ".txt",
-        //         Title = "Export Environment Variables"
-        //     };
-
-        //     if (saveFileDialog.ShowDialog() == true)
-        //     {
-        //         try
-        //         {
-        //             using (StreamWriter file = new StreamWriter(saveFileDialog.FileName))
-        //             {
-        //                 // Write file header
-        //                 file.WriteLine($"Environment Variables Export - {DateTime.Now}\n");
-
-        //                 // 导出用户环境变量
-        //                 if (ViewModel.BackupUserVars)
-        //                 {
-        //                     file.WriteLine("[User Variables]");
-        //                     foreach (var kv in MainWindowViewModel.UserEnvVars)
-        //                     {
-        //                         file.WriteLine($"{kv.Key}={kv.Value}");
-        //                     }
-        //                     file.WriteLine();
-        //                 }
-
-        //                 // 导出系统环境变量
-        //                 if (ViewModel.BackupSystemVars)
-        //                 {
-        //                     file.WriteLine("[System Variables]");
-        //                     foreach (var kv in MainWindowViewModel.SystemEnvVars)
-        //                     {
-        //                         file.WriteLine($"{kv.Key}={kv.Value}");
-        //                     }
-        //                 }
-        //             }
-
-        //             ViewModel.BackupStatus = "Export Successful!";
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             MessageBox.Show($"An error occurred during the export process: {ex.Message}", "Export error", MessageBoxButton.OK, MessageBoxImage.Error);
-        //             ViewModel.BackupStatus = "Export failed";
-        //         }
-        //     }
-        // }
-
+        /// <summary>
+        /// Handles backup button click event to save environment variables to a file
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event arguments</param>
         private void BackupButton_Click(object sender, RoutedEventArgs e)
         {
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -114,7 +77,7 @@ namespace EnvVarViewer
                             file.WriteLine();
                         }
 
-                        // 备份用户环境变量
+                        // Backup user environment variables
                         if (ViewModel.BackupUserVars)
                         {
                             if (isTxtFormat)
@@ -137,7 +100,7 @@ namespace EnvVarViewer
                             }
                         }
 
-                        // 备份系统环境变量
+                        // Backup system environment variables
                         if (ViewModel.BackupSystemVars)
                         {
                             if (isTxtFormat)
@@ -169,6 +132,11 @@ namespace EnvVarViewer
             }
         }
 
+        /// <summary>
+        /// Handles browse button click event to select a backup file
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event arguments</param>
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
@@ -186,6 +154,10 @@ namespace EnvVarViewer
             }
         }
 
+        /// <summary>
+        /// Loads and previews the content of a backup file
+        /// </summary>
+        /// <param name="filePath">Path to the backup file</param>
         private void LoadBackupPreview(string filePath)
         {
             try
@@ -292,6 +264,11 @@ namespace EnvVarViewer
             }
         }
 
+        /// <summary>
+        /// Handles restore button click event to restore environment variables from backup
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event arguments</param>
         private void RestoreButton_Click(object sender, RoutedEventArgs e)
         {
             if (!IsAdministrator() && RestoreSystemVarsCheckBox.IsChecked == true)
@@ -310,7 +287,7 @@ namespace EnvVarViewer
             {
                 int restoredCount = 0;
 
-                // 恢复用户环境变量
+                // Restore user environment variables
                 if (RestoreUserVarsCheckBox.IsChecked == true && previewUserVars.Count > 0) {
                     foreach (var kv in previewUserVars) {
                         if ((OverwriteExistingCheckBox.IsChecked == true || !MainWindowViewModel.UserEnvVars.ContainsKey(kv.Key)) &&
@@ -321,7 +298,7 @@ namespace EnvVarViewer
                     }
                 }
 
-                // 恢复系统环境变量
+                // Restore system environment variables
                 if (RestoreSystemVarsCheckBox.IsChecked == true && previewSystemVars.Count > 0) {
                     foreach (var kv in previewSystemVars) {
                         if ((OverwriteExistingCheckBox.IsChecked == true || !MainWindowViewModel.SystemEnvVars.ContainsKey(kv.Key)) &&
@@ -337,8 +314,8 @@ namespace EnvVarViewer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"恢复过程中发生错误: {ex.Message}", "恢复错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                RestoreStatusText.Text = "恢复失败";
+                MessageBox.Show($"An error occurred during the restore process: {ex.Message}", "Restore Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                RestoreStatusText.Text = "Restore failed";
             }
         }
 

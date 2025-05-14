@@ -5,6 +5,7 @@
         Title="Add/Modify Environment Variable" Height="250" Width="400"
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E" Foreground="White">
+    <!-- Main layout grid with margin adjustment -->
     <Grid Margin="0,0,0,-6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -18,25 +19,33 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+        <!-- Environment variable name label -->
         <TextBlock Text="Name:" Grid.Row="1" Grid.Column="0" Margin="10,10,5,5"/>
+        <!-- Input field for environment variable name -->
         <TextBox x:Name="NameTextBox" Grid.Row="1" Grid.Column="1" Margin="5,10,10,5"/>
 
+        <!-- Environment variable value label -->
         <TextBlock Text="Value:" Grid.Row="2" Grid.Column="0" Margin="10,20,5,10"/>
+        <!-- Input field for environment variable value -->
         <TextBox x:Name="ValueTextBox" Grid.Row="2" Grid.Column="1" Margin="5,20,10,10"/>
 
+        <!-- Environment variable scope label -->
         <TextBlock Text="Scope:" Grid.Row="3" Grid.Column="0" Margin="10,18,5,0"/>
+        <!-- Dropdown selector for environment variable scope (Process/User/System) -->
         <ComboBox x:Name="ScopeComboBox" Grid.Row="3" Grid.Column="1" Margin="5,18,10,0">
             <ComboBoxItem Content="Process"/>
             <ComboBoxItem Content="User"/>
             <ComboBoxItem Content="System"/>
         </ComboBox>
 
+        <!-- Window title bar with application icon -->
         <ui:TitleBar
             Title="Add/Modify Environment Variable"
             Grid.Row="0"
             Grid.ColumnSpan="2"
             Icon="icon.ico" />
 
+        <!-- Save button container -->
         <StackPanel Grid.Row="5" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ui:Button Content="Save" Click="SaveButton_Click"
                        Height="40" Width="80"/>
