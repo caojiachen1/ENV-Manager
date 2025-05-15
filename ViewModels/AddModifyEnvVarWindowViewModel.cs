@@ -5,7 +5,7 @@ using System.Windows;
 namespace EnvVarViewer.ViewModels
 {
     /// <summary>
-    /// 添加或修改环境变量窗口的ViewModel
+    /// ViewModel for Add/Modify Environment Variable Window
     /// </summary>
     public class AddModifyEnvVarWindowViewModel : ViewModelBase
     {
@@ -22,7 +22,7 @@ namespace EnvVarViewer.ViewModels
         public event EventHandler EnvVarModified;
 
         /// <summary>
-        /// 环境变量名称
+        /// Environment variable name
         /// </summary>
         public string Name
         {
@@ -31,7 +31,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 环境变量值
+        /// Environment variable value
         /// </summary>
         public string Value
         {
@@ -40,7 +40,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 选中的作用域索引
+        /// Selected scope index (0=User, 1=System)
         /// </summary>
         public int SelectedScopeIndex
         {
@@ -49,12 +49,12 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 保存命令
+        /// Save command
         /// </summary>
         public RelayCommand SaveCommand { get; }
 
         /// <summary>
-        /// 初始化新实例
+        /// Initializes a new instance for adding environment variables
         /// </summary>
         public AddModifyEnvVarWindowViewModel(
             Dictionary<string, string> userEnvVars,
@@ -72,7 +72,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 初始化用于修改现有环境变量的新实例
+        /// Initializes a new instance for modifying existing environment variables
         /// </summary>
         public AddModifyEnvVarWindowViewModel(
             Dictionary<string, string> userEnvVars,
@@ -165,7 +165,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 关闭窗口事件
+        /// Window close event
         /// </summary>
         public event EventHandler CloseWindow;
     }

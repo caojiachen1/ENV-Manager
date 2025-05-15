@@ -114,7 +114,7 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public void UpdateListBox()
         {
-            // 重新加载环境变量
+            // Reload environment variables from both user and system scope
             _userEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User)
                 .Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
@@ -123,7 +123,7 @@ namespace EnvVarViewer.ViewModels
                 .Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
 
-            // 更新列表
+            // Update the filtered and sorted list of environment variables
             var query = _userEnvVars.Keys
                 .Union(_systemEnvVars.Keys)
                 .Union(_modifiedEnvVars.Keys)
@@ -140,18 +140,18 @@ namespace EnvVarViewer.ViewModels
 
             EnvVarList = query.ToList();
 
-            // 触发属性变更通知
+            // Notify property changes for UI updates
             OnPropertyChanged(nameof(UserEnvVars));
             OnPropertyChanged(nameof(SystemEnvVars));
             OnPropertyChanged(nameof(ModifiedEnvVars));
             OnPropertyChanged(nameof(DeletedEnvVars));
             
-            // 通知主窗口强制刷新列表
+            // Notify main window to refresh the environment variables list
             EnvVarListUpdated?.Invoke(this, EventArgs.Empty);
         }
         
         /// <summary>
-        /// 环境变量列表更新事件
+        /// Event triggered when environment variables list is updated
         /// </summary>
         public event EventHandler EnvVarListUpdated;
 

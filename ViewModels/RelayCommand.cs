@@ -4,7 +4,7 @@ using System.Windows.Input;
 namespace EnvVarViewer.ViewModels
 {
     /// <summary>
-    /// 实现 ICommand 接口的命令类，用于在 MVVM 模式中处理命令绑定
+    /// Command class that implements ICommand interface for command binding in MVVM pattern
     /// </summary>
     public class RelayCommand : ICommand
     {
@@ -18,10 +18,10 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 创建一个新的命令实例
+        /// Creates a new command instance
         /// </summary>
-        /// <param name="execute">执行命令时要调用的方法</param>
-        /// <param name="canExecute">决定命令是否可以执行的方法</param>
+        /// <param name="execute">The method to be called when command is executed</param>
+        /// <param name="canExecute">The method that determines if command can be executed</param>
         public RelayCommand(Action execute, Func<bool> canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
@@ -29,7 +29,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 确定此命令是否可以在其当前状态下执行
+        /// Determines whether the command can execute in its current state
         /// </summary>
         public bool CanExecute(object parameter)
         {
@@ -37,7 +37,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 执行命令的方法
+        /// Executes the command
         /// </summary>
         public void Execute(object parameter)
         {
@@ -45,7 +45,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 手动触发命令状态更新
+        /// Manually triggers command state update
         /// </summary>
         public void RaiseCanExecuteChanged()
         {
@@ -54,7 +54,7 @@ namespace EnvVarViewer.ViewModels
     }
 
     /// <summary>
-    /// 带参数的 RelayCommand 实现
+    /// Generic RelayCommand implementation with parameter
     /// </summary>
     public class RelayCommand<T> : ICommand
     {
@@ -68,10 +68,10 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 创建一个新的命令实例
+        /// Creates a new command instance
         /// </summary>
-        /// <param name="execute">执行命令时要调用的方法</param>
-        /// <param name="canExecute">决定命令是否可以执行的方法</param>
+        /// <param name="execute">The method to be called when command is executed</param>
+        /// <param name="canExecute">The method that determines if command can be executed</param>
         public RelayCommand(Action<T> execute, Func<T, bool> canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
@@ -79,7 +79,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 确定此命令是否可以在其当前状态下执行
+        /// Determines whether the command can execute in its current state
         /// </summary>
         public bool CanExecute(object parameter)
         {
@@ -87,7 +87,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 执行命令的方法
+        /// Executes the command
         /// </summary>
         public void Execute(object parameter)
         {
@@ -95,7 +95,7 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 手动触发命令状态更新
+        /// Manually triggers command state update
         /// </summary>
         public void RaiseCanExecuteChanged()
         {

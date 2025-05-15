@@ -7,7 +7,7 @@ using System.Linq;
 namespace EnvVarViewer.ViewModels
 {
     /// <summary>
-    /// ModifyPathWindow 的 ViewModel，负责处理 PATH 环境变量的修改逻辑
+    /// ViewModel for ModifyPathWindow, handles PATH environment variable modification logic
     /// </summary>
     public class ModifyPathWindowViewModel : ViewModelBase
     {
@@ -99,9 +99,9 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 更新 PATH 环境变量
+        /// Updates the PATH environment variable
         /// </summary>
-        /// <param name="value">新的 PATH 值</param>
+        /// <param name="value">New PATH value to set</param>
         private void SetEnvironmentVariable(string value)
         {
             try

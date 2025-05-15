@@ -1,21 +1,84 @@
-using System.Windows;
+using System.Windows.Input;
 
-namespace EnvVarViewer
+namespace EnvVarViewer.ViewModels
 {
-    public partial class ConfirmDeleteWindow : Wpf.Ui.Controls.FluentWindow
+    /// <summary>
+    /// ViewModel for Confirm Delete Environment Variable Window
+    /// </summary>
+    public class ConfirmDeleteViewModel : ViewModelBase
     {
-        public string VariableName { get; set; }
-        public string VariableDescription { get; set; }
-        public string WarningMessage { get; set; }
+        private string _variableName;
+        private string _variableDescription;
+        private string _warningMessage;
+        private bool _canConfirm = true;
 
-        public ConfirmDeleteWindow(string variableName)
+        /// <summary>
+        /// Environment variable name
+        /// </summary>
+        public string VariableName
         {
-            InitializeComponent();
-            DataContext = this;
+            get => _variableName;
+            set => SetProperty(ref _variableName, value);
+        }
+
+        /// <summary>
+        /// Environment variable description
+        /// </summary>
+        public string VariableDescription
+        {
+            get => _variableDescription;
+            set => SetProperty(ref _variableDescription, value);
+        }
+
+        /// <summary>
+        /// Warning message for deletion
+        /// </summary>
+        public string WarningMessage
+        {
+            get => _warningMessage;
+            set => SetProperty(ref _warningMessage, value);
+        }
+
+        /// <summary>
+        /// Whether deletion can be confirmed (false for critical system variables)
+        /// </summary>
+        public bool CanConfirm
+        {
+            get => _canConfirm;
+            set => SetProperty(ref _canConfirm, value);
+        }
+
+        /// <summary>
+        /// Command to confirm deletion
+        /// </summary>
+        public ICommand ConfirmCommand { get; }
+
+        /// <summary>
+        /// Command to cancel deletion
+        /// </summary>
+        public ICommand CancelCommand { get; }
+
+        /// <summary>
+        /// Constructor - initializes with variable name to delete
+        /// </summary>
+        /// <param name="variableName">环境变量名称</param>
+        public ConfirmDeleteViewModel(string variableName)
+        {
             VariableName = variableName;
+            ConfirmCommand = new RelayCommand(() => OnConfirm());
+            CancelCommand = new RelayCommand(() => OnCancel());
+            ValidateVariable();
+        }
+
+        /// <summary>
+        /// Validates if the environment variable can be safely deleted
+        /// Checks for system critical variables and important development variables
+        /// </summary>
+        private void ValidateVariable()
+        {
+            string upperVarName = VariableName.ToUpper();
             
-            // Validate if the variable is a Windows system critical environment variable
-            string upperVarName = variableName.ToUpper();
+            // 验证是否为Windows系统关键环境变量
             if (upperVarName == "PATH" || 
                 upperVarName == "TEMP" || 
                 upperVarName == "TMP" || 
@@ -30,19 +93,21 @@ namespace EnvVarViewer
                 upperVarName == "ALLUSERSPROFILE")
             {
                 VariableDescription = "System critical environment variable required for Windows system operation.";
-                WarningMessage = $"System critical variable {variableName} cannot be deleted! Deletion may cause system instability or crash.";
-                ConfirmButton.IsEnabled = false;
+                WarningMessage = $"System critical variable {VariableName} cannot be deleted! Deletion may cause system instability or crash.";
+                CanConfirm = false;
                 return;
             }
 
-            // Check for important development environment variables
-            // First check for CUDA-related variables (NVIDIA GPU development)
-            if (variableName.ToUpper().StartsWith("CUDA_PATH"))
+            // 检查重要的开发环境变量
+            // 首先检查CUDA相关变量
+            if (upperVarName.StartsWith("CUDA_PATH"))
             {
                 VariableDescription = "Installation path for CUDA Development Toolkit, used for NVIDIA GPU programming and deep learning frameworks.";
                 WarningMessage = "Deleting this variable may affect applications that depend on CUDA!";
+                return;
             }
-            else switch (upperVarName)
+
+            switch (upperVarName)
             {
                 case "JAVA_HOME":
                     VariableDescription = "Java Development Kit (JDK) installation path, used for Java application development and runtime environment.";
@@ -84,24 +149,26 @@ namespace EnvVarViewer
             }
         }
 
-        /// <summary>
-        /// Handles the confirm button click event
-        /// Sets dialog result to true and closes the window
-        /// </summary>
-        private void ConfirmButton_Click(object sender, RoutedEventArgs e)
+        private void OnConfirm()
         {
             DialogResult = true;
-            Close();
+            CloseWindow?.Invoke();
+        }
+
+        private void OnCancel()
+        {
+            DialogResult = false;
+            CloseWindow?.Invoke();
         }
 
         /// <summary>
-        /// Handles the cancel button click event
-        /// Sets dialog result to false and closes the window
+        /// Action to close the confirmation window
         /// </summary>
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
+        public Action CloseWindow { get; set; }
+
+        /// <summary>
+        /// Dialog result (true=confirmed, false=cancelled)
+        /// </summary>
+        public bool? DialogResult { get; private set; }
     }
 }

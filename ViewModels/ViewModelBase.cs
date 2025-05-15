@@ -4,20 +4,20 @@ using System.Runtime.CompilerServices;
 namespace EnvVarViewer.ViewModels
 {
     /// <summary>
-    /// 为所有 ViewModel 提供基础功能的抽象类
+    /// Abstract base class providing common functionality for all ViewModels
     /// </summary>
     public abstract class ViewModelBase : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
-        /// 设置属性值并触发属性改变事件
+        /// Sets property value and raises PropertyChanged event
         /// </summary>
-        /// <typeparam name="T">属性类型</typeparam>
-        /// <param name="field">字段引用</param>
-        /// <param name="value">新值</param>
-        /// <param name="propertyName">属性名称（可选）</param>
-        /// <returns>如果值已更改则返回true</returns>
+        /// <typeparam name="T">Property type</typeparam>
+        /// <param name="field">Field reference</param>
+        /// <param name="value">New value</param>
+        /// <param name="propertyName">Property name (optional)</param>
+        /// <returns>Returns true if value was changed</returns>
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
             if (Equals(field, value)) return false;
@@ -28,9 +28,9 @@ namespace EnvVarViewer.ViewModels
         }
 
         /// <summary>
-        /// 触发属性改变事件
+        /// Raises PropertyChanged event
         /// </summary>
-        /// <param name="propertyName">属性名称</param>
+        /// <param name="propertyName">Property name</param>
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

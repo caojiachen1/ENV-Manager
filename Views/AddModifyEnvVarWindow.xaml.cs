@@ -9,7 +9,7 @@ namespace EnvVarViewer
         private readonly AddModifyEnvVarWindowViewModel _viewModel;
 
         /// <summary>
-        /// 初始化新实例
+        /// Initializes a new instance for adding environment variables
         /// </summary>
         public AddModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, Dictionary<string, string> modifiedEnvVars, HashSet<string> deletedEnvVars)
         {
@@ -20,7 +20,7 @@ namespace EnvVarViewer
         }
 
         /// <summary>
-        /// 初始化用于修改现有环境变量的新实例
+        /// Initializes a new instance for modifying existing environment variables
         /// </summary>
         public AddModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, Dictionary<string, string> modifiedEnvVars, HashSet<string> deletedEnvVars, string name, string value)
         {
@@ -31,7 +31,7 @@ namespace EnvVarViewer
         }
 
         /// <summary>
-        /// 环境变量添加事件
+        /// Event triggered when an environment variable is added
         /// </summary>
         public event EventHandler EnvVarAdded
         {
@@ -40,7 +40,7 @@ namespace EnvVarViewer
         }
 
         /// <summary>
-        /// 环境变量修改事件
+        /// Event triggered when an environment variable is modified
         /// </summary>
         public event EventHandler EnvVarModified
         {

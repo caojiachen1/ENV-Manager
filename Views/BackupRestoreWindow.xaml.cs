@@ -12,7 +12,7 @@ namespace EnvVarViewer
     {
         public MainWindowViewModel MainWindowViewModel { get; }
         public ViewModels.BackupRestoreWindowViewModel ViewModel { get; private set; }
-        public string selectedBackupFile;
+        public string selectedBackupFile = string.Empty;
         private Dictionary<string, string> previewUserVars = new Dictionary<string, string>();
         private Dictionary<string, string> previewSystemVars = new Dictionary<string, string>();
 
