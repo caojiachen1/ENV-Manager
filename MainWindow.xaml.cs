@@ -43,6 +43,11 @@ namespace EnvVarViewer
             // Initialize ViewModel and set as DataContext
             ViewModel = new ViewModels.MainWindowViewModel();
             DataContext = ViewModel;
+            ViewModel.EnvVarListUpdated += (s, e) => 
+            {
+                EnvVarListBox.ItemsSource = null;
+                EnvVarListBox.ItemsSource = ViewModel.EnvVarList;
+            };
             
             // Check if running as administrator, if not elevate privileges
             if (!ViewModel.IsAdministrator())
@@ -251,18 +256,22 @@ namespace EnvVarViewer
                     if (selectedVar.ToLower() == "path")
                     {
                         var modifyPathWindow = new ModifyPathWindow(value, isUserNode);
-                        modifyPathWindow.PathModified += (ss, se) =>
+                        var modifyPathViewModel = modifyPathWindow.DataContext as ViewModels.ModifyPathWindowViewModel;
+                        if (modifyPathViewModel != null)
                         {
-                            if (isUserNode)
+                            modifyPathViewModel.PathModified += (ss, se) =>
                             {
-                                ViewModel.UserEnvVars[selectedVar] = modifyPathWindow.GetPathValue();
-                            }
-                            else
-                            {
-                                ViewModel.SystemEnvVars[selectedVar] = modifyPathWindow.GetPathValue();
-                            }
-                            ViewModel.UpdateListBox();
-                        };
+                                if (isUserNode)
+                                {
+                                    ViewModel.UserEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                                }
+                                else
+                                {
+                                    ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                                }
+                                ViewModel.UpdateListBox();
+                            };
+                        }
                         modifyPathWindow.ShowDialog();
                     }
                     else
@@ -282,11 +291,15 @@ namespace EnvVarViewer
                     if (selectedVar.ToLower() == "path")
                     {
                         var modifyPathWindow = new ModifyPathWindow(value, false);
-                        modifyPathWindow.PathModified += (ss, se) =>
+                        var modifyPathViewModel = modifyPathWindow.DataContext as ViewModels.ModifyPathWindowViewModel;
+                        if (modifyPathViewModel != null)
                         {
-                            ViewModel.SystemEnvVars[selectedVar] = modifyPathWindow.GetPathValue();
-                            ViewModel.UpdateListBox();
-                        };
+                            modifyPathViewModel.PathModified += (ss, se) =>
+                            {
+                                ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                                ViewModel.UpdateListBox();
+                            };
+                        }
                         modifyPathWindow.ShowDialog();
                     }
                     else

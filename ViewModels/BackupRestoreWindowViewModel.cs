@@ -10,7 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace EnvVarViewer.ViewModels
 {
-    public class BackupRestoreWindowViewModel : INotifyPropertyChanged
+    public class BackupRestoreWindowViewModel : ViewModelBase
     {
         private string _selectedBackupFile;
         private Dictionary<string, string> _previewUserVars;

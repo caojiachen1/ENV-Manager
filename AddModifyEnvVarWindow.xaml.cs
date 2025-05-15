@@ -1,129 +1,51 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Controls;
+using EnvVarViewer.ViewModels;
 
 namespace EnvVarViewer
 {
     public partial class AddModifyEnvVarWindow : Wpf.Ui.Controls.FluentWindow
     {
-        private Dictionary<string, string> userEnvVars;
-        private Dictionary<string, string> systemEnvVars;
-        private Dictionary<string, string> modifiedEnvVars;
-        private HashSet<string> deletedEnvVars;
-        private string originalName;
-
-        public event EventHandler EnvVarAdded;
-        public event EventHandler EnvVarModified;
+        private readonly AddModifyEnvVarWindowViewModel _viewModel;
 
         /// <summary>
-        /// Initializes a new instance of the AddModifyEnvVarWindow class
+        /// 初始化新实例
         /// </summary>
-        /// <param name="userEnvVars">User environment variables</param>
-        /// <param name="systemEnvVars">System environment variables</param>
-        /// <param name="modifiedEnvVars">Modified environment variables</param>
-        /// <param name="deletedEnvVars">Deleted environment variables</param>
         public AddModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, Dictionary<string, string> modifiedEnvVars, HashSet<string> deletedEnvVars)
         {
             InitializeComponent();
-            this.userEnvVars = userEnvVars;
-            this.systemEnvVars = systemEnvVars;
-            this.modifiedEnvVars = modifiedEnvVars;
-            this.deletedEnvVars = deletedEnvVars;
-            ScopeComboBox.SelectedIndex = 0; // Default to User
+            _viewModel = new AddModifyEnvVarWindowViewModel(userEnvVars, systemEnvVars, modifiedEnvVars, deletedEnvVars);
+            DataContext = _viewModel;
+            _viewModel.CloseWindow += (s, e) => Close();
         }
 
         /// <summary>
-        /// Initializes a new instance for modifying an existing environment variable
+        /// 初始化用于修改现有环境变量的新实例
         /// </summary>
-        /// <param name="name">Name of the environment variable to modify</param>
-        /// <param name="value">New value for the environment variable</param>
         public AddModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, Dictionary<string, string> modifiedEnvVars, HashSet<string> deletedEnvVars, string name, string value)
-            : this(userEnvVars, systemEnvVars, modifiedEnvVars, deletedEnvVars)
         {
-            this.originalName = name;
-            NameTextBox.Text = name;
-            ValueTextBox.Text = value;
-            if (userEnvVars.ContainsKey(name))
-            {
-                ScopeComboBox.SelectedIndex = 0; // User
-            }
-            else if (systemEnvVars.ContainsKey(name))
-            {
-                ScopeComboBox.SelectedIndex = 1; // System
-            }
+            InitializeComponent();
+            _viewModel = new AddModifyEnvVarWindowViewModel(userEnvVars, systemEnvVars, modifiedEnvVars, deletedEnvVars, name, value);
+            DataContext = _viewModel;
+            _viewModel.CloseWindow += (s, e) => Close();
         }
 
         /// <summary>
-        /// Handles the save button click event to add or modify an environment variable
+        /// 环境变量添加事件
         /// </summary>
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        public event EventHandler EnvVarAdded
         {
-            string name = NameTextBox.Text;
-            string value = ValueTextBox.Text;
-            string scope = ((ComboBoxItem)ScopeComboBox.SelectedItem).Content.ToString();
-            if (scope == "System") scope = "Machine";
+            add { _viewModel.EnvVarAdded += value; }
+            remove { _viewModel.EnvVarAdded -= value; }
+        }
 
-            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(value))
-            {
-                MessageBox.Show("Name and Value cannot be empty.");
-                return;
-            }
-            
-            // Check if the variable name already exists
-            if (originalName == null && (userEnvVars.ContainsKey(name) || systemEnvVars.ContainsKey(name) || modifiedEnvVars.ContainsKey(name)))
-            {
-                MessageBox.Show($"Environment variable '{name}' already exists.");
-                return;
-            }
-
-            EnvironmentVariableTarget target = new EnvironmentVariableTarget();
-            target = scope switch
-            {
-                "Process" => EnvironmentVariableTarget.Process,
-                "User" => EnvironmentVariableTarget.User,
-                "System" => EnvironmentVariableTarget.Machine,
-                _ => target
-            };
-
-            try
-            {
-                if (originalName != null && (userEnvVars.ContainsKey(originalName) || systemEnvVars.ContainsKey(originalName) || modifiedEnvVars.ContainsKey(originalName)))
-                {
-                    Environment.SetEnvironmentVariable(originalName, null, target);
-                    Environment.SetEnvironmentVariable(name, value, target);
-                    modifiedEnvVars[name] = value;
-                    if (originalName != name && modifiedEnvVars.ContainsKey(originalName))
-                    {
-                        modifiedEnvVars.Remove(originalName);
-                    }
-                    if (deletedEnvVars.Contains(originalName))
-                    {
-                        deletedEnvVars.Remove(originalName);
-                    }
-                    EnvVarModified?.Invoke(this, EventArgs.Empty);
-                }
-                else
-                {
-                    Environment.SetEnvironmentVariable(name, value, target);
-                    modifiedEnvVars[name] = value;
-                    if (deletedEnvVars.Contains(name))
-                    {
-                        deletedEnvVars.Remove(name);
-                    }
-                    EnvVarAdded?.Invoke(this, EventArgs.Empty);
-                }
-
-                this.Close();
-            }
-            catch (System.Security.SecurityException ex)
-            {
-                MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occurred: {ex.Message}");
-            }
+        /// <summary>
+        /// 环境变量修改事件
+        /// </summary>
+        public event EventHandler EnvVarModified
+        {
+            add { _viewModel.EnvVarModified += value; }
+            remove { _viewModel.EnvVarModified -= value; }
         }
     }
 }

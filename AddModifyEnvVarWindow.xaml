@@ -1,7 +1,8 @@
-﻿<ui:FluentWindow x:Class="EnvVarViewer.AddModifyEnvVarWindow"
+<ui:FluentWindow x:Class="EnvVarViewer.AddModifyEnvVarWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:vm="clr-namespace:EnvVarViewer.ViewModels"
         Title="Add/Modify Environment Variable" Height="250" Width="400"
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E" Foreground="White">
@@ -22,17 +23,20 @@
         <!-- Environment variable name label -->
         <TextBlock Text="Name:" Grid.Row="1" Grid.Column="0" Margin="10,10,5,5"/>
         <!-- Input field for environment variable name -->
-        <TextBox x:Name="NameTextBox" Grid.Row="1" Grid.Column="1" Margin="5,10,10,5"/>
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                Grid.Row="1" Grid.Column="1" Margin="5,10,10,5"/>
 
         <!-- Environment variable value label -->
         <TextBlock Text="Value:" Grid.Row="2" Grid.Column="0" Margin="10,20,5,10"/>
         <!-- Input field for environment variable value -->
-        <TextBox x:Name="ValueTextBox" Grid.Row="2" Grid.Column="1" Margin="5,20,10,10"/>
+        <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
+                Grid.Row="2" Grid.Column="1" Margin="5,20,10,10"/>
 
         <!-- Environment variable scope label -->
         <TextBlock Text="Scope:" Grid.Row="3" Grid.Column="0" Margin="10,18,5,0"/>
         <!-- Dropdown selector for environment variable scope (Process/User/System) -->
-        <ComboBox x:Name="ScopeComboBox" Grid.Row="3" Grid.Column="1" Margin="5,18,10,0">
+        <ComboBox SelectedIndex="{Binding SelectedScopeIndex}" 
+                  Grid.Row="3" Grid.Column="1" Margin="5,18,10,0">
             <ComboBoxItem Content="Process"/>
             <ComboBoxItem Content="User"/>
             <ComboBoxItem Content="System"/>
@@ -47,7 +51,7 @@
 
         <!-- Save button container -->
         <StackPanel Grid.Row="5" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <ui:Button Content="Save" Click="SaveButton_Click"
+            <ui:Button Content="Save" Command="{Binding SaveCommand}"
                        Height="40" Width="80"/>
         </StackPanel>
     </Grid>

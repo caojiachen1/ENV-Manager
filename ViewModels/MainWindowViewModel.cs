@@ -10,7 +10,7 @@ using Wpf.Ui.Appearance;
 
 namespace EnvVarViewer.ViewModels
 {
-    public class MainWindowViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : ViewModelBase
     {
         private Dictionary<string, string> _userEnvVars;
         private Dictionary<string, string> _systemEnvVars;
@@ -114,6 +114,16 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public void UpdateListBox()
         {
+            // 重新加载环境变量
+            _userEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User)
+                .Cast<System.Collections.DictionaryEntry>()
+                .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+
+            _systemEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Machine)
+                .Cast<System.Collections.DictionaryEntry>()
+                .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+
+            // 更新列表
             var query = _userEnvVars.Keys
                 .Union(_systemEnvVars.Keys)
                 .Union(_modifiedEnvVars.Keys)
@@ -129,7 +139,21 @@ namespace EnvVarViewer.ViewModels
                 : query.OrderByDescending(k => k);
 
             EnvVarList = query.ToList();
+
+            // 触发属性变更通知
+            OnPropertyChanged(nameof(UserEnvVars));
+            OnPropertyChanged(nameof(SystemEnvVars));
+            OnPropertyChanged(nameof(ModifiedEnvVars));
+            OnPropertyChanged(nameof(DeletedEnvVars));
+            
+            // 通知主窗口强制刷新列表
+            EnvVarListUpdated?.Invoke(this, EventArgs.Empty);
         }
+        
+        /// <summary>
+        /// 环境变量列表更新事件
+        /// </summary>
+        public event EventHandler EnvVarListUpdated;
 
         /// <summary>
         /// Checks if current user has administrator privileges
