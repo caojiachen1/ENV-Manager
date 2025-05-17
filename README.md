@@ -21,3 +21,26 @@ ENV-Manager is a modern Windows environment variables management tool with graph
 2. Use toolbar buttons to add, modify or delete variables
 3. Backup function saves current environment configuration
 4. Restore function recovers configuration from backup file
+
+## Building from Source
+1. Prerequisites:
+   - .NET 8.0 SDK or later
+   - Visual Studio 2022 (recommended) or VS Code with C# extensions
+
+2. Build steps:
+   ```bash
+   git clone https://github.com/your-repo/ENV-Manager.git
+   cd ENV-Manager
+   dotnet restore
+   dotnet build
+   ```
+
+3. Running the application:
+   ```bash
+   dotnet run --project ENV-Manager.csproj
+   ```
+
+4. Creating a release package:
+   ```bash
+   dotnet publish -c Release -o ./publish
+   ```
