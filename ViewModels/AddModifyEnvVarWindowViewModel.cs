@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using CommunityToolkit.Mvvm.Input;
 
 namespace EnvVarViewer.ViewModels
 {

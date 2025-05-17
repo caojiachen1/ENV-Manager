@@ -7,6 +7,7 @@ using System.Security.Principal;
 using System.Windows;
 using System.Windows.Input;
 using Wpf.Ui.Appearance;
+using EnvVarViewer.Models; // Add reference to the new Model
 
 namespace EnvVarViewer.ViewModels
 {
@@ -31,10 +32,14 @@ namespace EnvVarViewer.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
+        private EnvironmentVariableModel _envVarModel; // Add instance of the Model
+
+        /// <summary>
         /// Initializes a new instance of the MainWindowViewModel class
         /// </summary>
         public MainWindowViewModel()
         {
+            _envVarModel = new EnvironmentVariableModel(); // Initialize the Model
             _modifiedEnvVars = new Dictionary<string, string>();
             _deletedEnvVars = new HashSet<string>();
             _currentSortOrder = SortOrder.Ascending;
@@ -98,14 +103,8 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public void LoadEnvVars()
         {
-            _userEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User)
-                .Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
-
-            _systemEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Machine)
-                .Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
-
+            _userEnvVars = _envVarModel.LoadEnvVars(EnvironmentVariableTarget.User); // Use Model
+            _systemEnvVars = _envVarModel.LoadEnvVars(EnvironmentVariableTarget.Machine); // Use Model
             UpdateListBox();
         }
 
@@ -115,13 +114,8 @@ namespace EnvVarViewer.ViewModels
         public void UpdateListBox()
         {
             // Reload environment variables from both user and system scope
-            _userEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User)
-                .Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
-
-            _systemEnvVars = Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Machine)
-                .Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value.ToString());
+            _userEnvVars = _envVarModel.LoadEnvVars(EnvironmentVariableTarget.User); // Use Model
+            _systemEnvVars = _envVarModel.LoadEnvVars(EnvironmentVariableTarget.Machine); // Use Model
 
             // Update the filtered and sorted list of environment variables
             var query = _userEnvVars.Keys
@@ -161,9 +155,7 @@ namespace EnvVarViewer.ViewModels
         /// <returns>True if user is administrator</returns>
         public bool IsAdministrator()
         {
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            return _envVarModel.IsAdministrator(); // Use Model
         }
 
         /// <summary>
@@ -171,7 +163,7 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public void Elevate()
         {
-            if (!IsAdministrator())
+            if (!_envVarModel.IsAdministrator()) // Use Model
             {
                 var processInfo = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName)
                 {

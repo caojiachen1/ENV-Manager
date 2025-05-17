@@ -107,6 +107,7 @@ namespace EnvVarViewer.ViewModels
             var identity = WindowsIdentity.GetCurrent();
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            // return new Models.EnvironmentVariableModel.IsAdministrator();
         }
 
         private void ExecuteBackup()

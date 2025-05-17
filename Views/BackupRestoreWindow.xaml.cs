@@ -35,9 +35,7 @@ namespace EnvVarViewer
         /// <returns>True if user is administrator</returns>
         private bool IsAdministrator()
         {
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            return new Models.EnvironmentVariableModel().IsAdministrator();
         }
 
         /// <summary>
