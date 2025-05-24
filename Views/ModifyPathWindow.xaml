@@ -29,10 +29,8 @@
         <ListBox Name="PathListBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="10" 
                  ItemsSource="{Binding PathEntries}" 
                  SelectedItem="{Binding SelectedPath}"
-                 VerticalAlignment="Stretch">
-            <ListBox.InputBindings>
-                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding CopyPathCommand}"/>
-            </ListBox.InputBindings>
+                 VerticalAlignment="Stretch"
+                 PreviewMouseDoubleClick="OnPathListBoxDoubleClick">
         </ListBox>
 
         <!-- New Path TextBox -->

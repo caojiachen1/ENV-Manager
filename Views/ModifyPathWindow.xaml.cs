@@ -11,83 +11,24 @@ namespace EnvVarViewer
     {
         private readonly ModifyPathWindowViewModel _viewModel;
 
-        //private List<string> pathEntries;
-        //private bool isUserPath;
-
-        //public event EventHandler PathModified;
-
         public ModifyPathWindow(string pathValue, bool isUserPath)
         {
             InitializeComponent();
             _viewModel = new ModifyPathWindowViewModel(pathValue, isUserPath);
             DataContext = _viewModel;
             _viewModel.PathModified += (s, e) => this.Close();
-
-            //this.isUserPath = isUserPath;
-            //pathEntries = new List<string>(pathValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
-            //PathListBox.ItemsSource = pathEntries;
         }
 
-        //public string GetPathValue()
-        //{
-        //    return string.Join(";", pathEntries);
-        //}
-
-        //private void AddButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    string newEntry = NewPathTextBox.Text.Trim();
-        //    if (!string.IsNullOrEmpty(newEntry) && !pathEntries.Contains(newEntry))
-        //    {
-        //        pathEntries.Add(newEntry);
-        //        PathListBox.Items.Refresh();
-        //        NewPathTextBox.Clear();
-        //    }
-        //}
-
-        //private void RemoveButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (PathListBox.SelectedItem != null)
-        //    {
-        //        pathEntries.Remove(PathListBox.SelectedItem.ToString());
-        //        PathListBox.Items.Refresh();
-        //    }
-        //}
-
-        //private void SaveButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    string newPathValue = GetPathValue();
-        //    SetEnvironmentVariable(newPathValue);
-        //    PathModified?.Invoke(this, EventArgs.Empty);
-        //    this.Close();
-        //}
-
-        ///// <summary>
-        ///// Updates the PATH environment variable
-        ///// </summary>
-        ///// <param name="value">New PATH value to set</param>
-        //private void SetEnvironmentVariable(string value)
-        //{
-        //    try
-        //    {
-        //        string variableName = "PATH";
-        //        EnvironmentVariableTarget target = isUserPath ? EnvironmentVariableTarget.User : EnvironmentVariableTarget.Machine;
-        //        Environment.SetEnvironmentVariable(variableName, value, target);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show($"Failed to set environment variable: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        //    }
-        //}
-
-        //private void PathListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        //{
-        //    if (PathListBox.SelectedItem != null)
-        //    {
-        //        string selectedPath = PathListBox.SelectedItem.ToString();
-        //        Clipboard.SetText(selectedPath);
-        //        var chunked = selectedPath.Length >= 25 ? $"{selectedPath.Substring(0, 25)}..." : selectedPath;
-        //        StatusLabel.Content = $"Copied {chunked} to clipboard";
-        //    }
-        //}
+        /// <summary>
+        /// Handles the double-click event on the path list to copy the selected path to clipboard
+        /// </summary>
+        private void OnPathListBoxDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (_viewModel.SelectedPath != null)
+            {
+                _viewModel.CopyPathCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
     }
 }

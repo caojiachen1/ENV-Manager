@@ -55,7 +55,7 @@
                     <ui:Button x:Name="BrowseButton" Content="Explore" Click="BrowseButton_Click" Width="80" Height="35"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                    <ui:Button x:Name="RestoreButton" Content="Restore from backup" Click="RestoreButton_Click" Width="150" Height="35" Margin="0,0,10,0"/>
+                    <ui:Button x:Name="RestoreButton" Content="Restore from backup" Click="RestoreButton_Click" Width="155" Height="35" Margin="0,0,10,0"/>
                     <ui:TextBlock x:Name="RestoreStatusText" Text="{Binding RestoreStatus}" VerticalAlignment="Center" Foreground="Green"/>
                 </StackPanel>
             </StackPanel>

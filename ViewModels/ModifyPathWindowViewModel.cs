@@ -13,6 +13,7 @@ namespace EnvVarViewer.ViewModels
     public class ModifyPathWindowViewModel : ViewModelBase
     {
         private ObservableCollection<string> _pathEntries;
+        private ObservableCollection<string> _originalPathEntries;
         private string _newPathEntry;
         private string _selectedPath;
         private string _statusMessage;
@@ -27,25 +28,55 @@ namespace EnvVarViewer.ViewModels
         public string NewPathEntry
         {
             get => _newPathEntry;
-            set => SetProperty(ref _newPathEntry, value);
+            // set => SetProperty(ref _newPathEntry, value);
+            set
+            {
+                if (SetProperty(ref _newPathEntry, value))
+                {
+                    AddPathCommand.NotifyCanExecuteChanged(); // Update command availability based on new value
+                }
+            }
         }
 
-        public string SelectedPath
+        public string? SelectedPath
         {
             get => _selectedPath;
-            set => SetProperty(ref _selectedPath, value);
+            // set => SetProperty(ref _selectedPath, value);
+            set
+            {
+                if (SetProperty(ref _selectedPath, value))
+                {
+                    RemovePathCommand.NotifyCanExecuteChanged(); // Update command availability based on new value
+                    CopyPathCommand.NotifyCanExecuteChanged(); // Update copy command availability
+                }
+            }
         }
 
         public string StatusMessage
         {
             get => _statusMessage;
-            set => SetProperty(ref _statusMessage, value);
+            set
+            {
+                if (SetProperty(ref _statusMessage, value))
+                {
+                    OnPropertyChanged(nameof(StatusMessage));
+                }
+            }
         }
 
-        public ICommand AddPathCommand { get; }
-        public ICommand RemovePathCommand { get; }
+        public RelayCommand AddPathCommand { get; }
+        public RelayCommand RemovePathCommand { get; }
         public ICommand SavePathCommand { get; }
-        public ICommand CopyPathCommand { get; }
+        public RelayCommand CopyPathCommand { get; private set; }
+
+        /// <summary>
+        /// Check if the save button can be pressed
+        /// </summary>
+        /// <returns>True if the path has been modified, false otherwise</returns>
+        private bool CanSavePath()
+        {
+            return !_pathEntries.SequenceEqual(_originalPathEntries);
+        }
 
         public event EventHandler PathModified;
 
@@ -53,11 +84,18 @@ namespace EnvVarViewer.ViewModels
         {
             _isUserPath = isUserPath;
             _pathEntries = new ObservableCollection<string>(pathValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+            _originalPathEntries = new ObservableCollection<string>(_pathEntries);
             
             AddPathCommand = new RelayCommand(AddPath, CanAddPath);
-            RemovePathCommand = new RelayCommand(RemovePath, () => SelectedPath != null);
-            SavePathCommand = new RelayCommand(SavePath);
+            RemovePathCommand = new RelayCommand(RemovePath, CanDeletePath);
+            SavePathCommand = new RelayCommand(SavePath, CanSavePath);
             CopyPathCommand = new RelayCommand(CopySelectedPath, () => SelectedPath != null);
+        }
+
+        // Check if the delete button can be pressed
+        private bool CanDeletePath()
+        {
+            return SelectedPath != null;
         }
 
         private bool CanAddPath()
@@ -71,6 +109,7 @@ namespace EnvVarViewer.ViewModels
             string newEntry = NewPathEntry.Trim();
             PathEntries.Add(newEntry);
             NewPathEntry = string.Empty;
+            ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged(); // Update save button availability
         }
 
         private void RemovePath()
@@ -79,6 +118,7 @@ namespace EnvVarViewer.ViewModels
             {
                 PathEntries.Remove(SelectedPath);
                 SelectedPath = null;
+                ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged(); // Update save button availability
             }
         }
 
