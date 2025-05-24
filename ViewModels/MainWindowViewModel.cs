@@ -113,7 +113,6 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public void UpdateListBox()
         {
-            // Reload environment variables from both user and system scope
             _userEnvVars = _envVarModel.LoadEnvVars(EnvironmentVariableTarget.User); // Use Model
             _systemEnvVars = _envVarModel.LoadEnvVars(EnvironmentVariableTarget.Machine); // Use Model
 

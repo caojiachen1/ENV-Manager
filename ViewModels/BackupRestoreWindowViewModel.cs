@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using System.Windows;
 
 namespace EnvVarViewer.ViewModels
 {
@@ -112,49 +113,138 @@ namespace EnvVarViewer.ViewModels
 
         private void ExecuteBackup()
         {
-            try
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
             {
-                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
-                    DefaultExt = ".txt",
-                    Title = "Export Environment Variables"
-                };
+                Filter = "Environment Variable Backup (*.envbackup)|*.envbackup|Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+                DefaultExt = ".envbackup",
+                Title = "Save Environment Variables Backup",
+                FileName = $"EnvBackup_{timestamp}.envbackup"
+            };
 
-                if (saveFileDialog.ShowDialog() == true)
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
                 {
                     using (StreamWriter file = new StreamWriter(saveFileDialog.FileName))
                     {
-                        file.WriteLine($"Environment Variables Export - {DateTime.Now}\n");
+                        bool isTxtFormat = Path.GetExtension(saveFileDialog.FileName).ToLower() == ".txt";
 
-                        if (BackupUserVars)
+                        // Write backup file header
+                        if (isTxtFormat)
                         {
-                            file.WriteLine("[User Environment Variables]");
-                            foreach (var kvp in MainWindowViewModel.UserEnvVars)
-                            {
-                                file.WriteLine($"{kvp.Key}={kvp.Value}");
-                            }
+                            file.WriteLine($"Environment Variables Export - {DateTime.Now}\n");
+                        }
+                        else
+                        {
+                            file.WriteLine("# Environment Variables Backup File");
+                            file.WriteLine($"# Creation Time: {DateTime.Now}");
+                            file.WriteLine("# Format: [Type]:[Variable Name]=[Variable Value]");
                             file.WriteLine();
                         }
 
-                        if (BackupSystemVars)
+                        // Backup user environment variables
+                        if (BackupUserVars)
                         {
-                            file.WriteLine("[System Environment Variables]");
-                            foreach (var kvp in MainWindowViewModel.SystemEnvVars)
+                            if (isTxtFormat)
                             {
-                                file.WriteLine($"{kvp.Key}={kvp.Value}");
+                                file.WriteLine("[User Variables]");
+                                foreach (var kv in MainWindowViewModel.UserEnvVars)
+                                {
+                                    file.WriteLine($"{kv.Key}={kv.Value}");
+                                }
+                                file.WriteLine();
+                            }
+                            else
+                            {
+                                file.WriteLine("[USER_VARIABLES]");
+                                foreach (var kv in MainWindowViewModel.UserEnvVars)
+                                {
+                                    file.WriteLine($"USER:{kv.Key}={kv.Value}");
+                                }
+                                file.WriteLine();
                             }
                         }
 
-                        BackupStatus = "Backup completed successfully";
+                        // Backup system environment variables
+                        if (BackupSystemVars)
+                        {
+                            if (isTxtFormat)
+                            {
+                                file.WriteLine("[System Variables]");
+                                foreach (var kv in MainWindowViewModel.SystemEnvVars)
+                                {
+                                    file.WriteLine($"{kv.Key}={kv.Value}");
+                                }
+                            }
+                            else
+                            {
+                                file.WriteLine("[SYSTEM_VARIABLES]");
+                                foreach (var kv in MainWindowViewModel.SystemEnvVars)
+                                {
+                                    file.WriteLine($"SYSTEM:{kv.Key}={kv.Value}");
+                                }
+                            }
+                        }
                     }
+
+                    BackupStatus = "Backup Successful!";
+                    OnPropertyChanged(nameof(BackupStatus));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    BackupStatus = "Backup failed";
+                    OnPropertyChanged(nameof(BackupStatus));
                 }
             }
-            catch (Exception ex)
-            {
-                BackupStatus = $"Backup failed: {ex.Message}";
-            }
         }
+
+        // private void ExecuteBackup()
+        // {
+        //     try
+        //     {
+        //         var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+        //         {
+        //             Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+        //             DefaultExt = ".txt",
+        //             Title = "Export Environment Variables"
+        //         };
+
+        //         if (saveFileDialog.ShowDialog() == true)
+        //         {
+        //             using (StreamWriter file = new StreamWriter(saveFileDialog.FileName))
+        //             {
+        //                 file.WriteLine($"Environment Variables Export - {DateTime.Now}\n");
+
+        //                 if (BackupUserVars)
+        //                 {
+        //                     file.WriteLine("[User Environment Variables]");
+        //                     foreach (var kvp in MainWindowViewModel.UserEnvVars)
+        //                     {
+        //                         file.WriteLine($"{kvp.Key}={kvp.Value}");
+        //                     }
+        //                     file.WriteLine();
+        //                 }
+
+        //                 if (BackupSystemVars)
+        //                 {
+        //                     file.WriteLine("[System Environment Variables]");
+        //                     foreach (var kvp in MainWindowViewModel.SystemEnvVars)
+        //                     {
+        //                         file.WriteLine($"{kvp.Key}={kvp.Value}");
+        //                     }
+        //                 }
+
+        //                 BackupStatus = "Backup completed successfully";
+        //             }
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         BackupStatus = $"Backup failed: {ex.Message}";
+        //     }
+        // }
 
         private void ExecuteRestore()
         {

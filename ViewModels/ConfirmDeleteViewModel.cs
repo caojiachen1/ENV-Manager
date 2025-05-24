@@ -62,7 +62,7 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Constructor - initializes with variable name to delete
         /// </summary>
-        /// <param name="variableName">环境变量名称</param>
+        /// <param name="variableName">Environment variable name</param>
         public ConfirmDeleteViewModel(string variableName)
         {
             VariableName = variableName;
@@ -79,7 +79,7 @@ namespace EnvVarViewer.ViewModels
         {
             string upperVarName = VariableName.ToUpper();
             
-            // 验证是否为Windows系统关键环境变量
+            // Verify if it's a Windows system critical environment variable
             if (upperVarName == "PATH" || 
                 upperVarName == "TEMP" || 
                 upperVarName == "TMP" || 
@@ -99,8 +99,8 @@ namespace EnvVarViewer.ViewModels
                 return;
             }
 
-            // 检查重要的开发环境变量
-            // 首先检查CUDA相关变量
+            // Check important development environment variables
+            // First check CUDA related variables
             if (upperVarName.StartsWith("CUDA_PATH"))
             {
                 VariableDescription = "Installation path for CUDA Development Toolkit, used for NVIDIA GPU programming and deep learning frameworks.";

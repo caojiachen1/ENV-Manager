@@ -28,7 +28,13 @@ namespace EnvVarViewer.ViewModels
         public string Name
         {
             get => _name;
-            set => SetProperty(ref _name, value);
+            set
+            {
+                if (SetProperty(ref _name, value))
+                {
+                    SaveCommand.NotifyCanExecuteChanged();
+                }
+            }
         }
 
         /// <summary>
@@ -37,7 +43,13 @@ namespace EnvVarViewer.ViewModels
         public string Value
         {
             get => _value;
-            set => SetProperty(ref _value, value);
+            set
+            {
+                if (SetProperty(ref _value, value))
+                {
+                    SaveCommand.NotifyCanExecuteChanged();
+                }
+            }
         }
 
         /// <summary>
@@ -67,7 +79,7 @@ namespace EnvVarViewer.ViewModels
             _systemEnvVars = systemEnvVars;
             _modifiedEnvVars = modifiedEnvVars;
             _deletedEnvVars = deletedEnvVars;
-            SelectedScopeIndex = 0; // 默认为User
+            SelectedScopeIndex = 0; // Default to User
 
             SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
         }
