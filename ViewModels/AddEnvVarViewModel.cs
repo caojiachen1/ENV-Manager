@@ -91,7 +91,7 @@ namespace EnvVarViewer.ViewModels
 
             if (_userEnvVars.ContainsKey(Name) || _systemEnvVars.ContainsKey(Name))
             {
-                MessageBox.Show($"Environment variable '{Name}' already exists.");
+                System.Windows.MessageBox.Show($"Environment variable '{Name}' already exists.");
                 return;
             }
 
@@ -120,11 +120,11 @@ namespace EnvVarViewer.ViewModels
             }
             catch (System.Security.SecurityException)
             {
-                MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
+                System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred: {ex.Message}");
+                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
             }
         }
 

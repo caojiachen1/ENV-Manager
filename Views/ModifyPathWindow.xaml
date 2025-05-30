@@ -38,6 +38,10 @@
                  Text="{Binding NewPathEntry, UpdateSourceTrigger=PropertyChanged}" 
                  VerticalAlignment="Stretch"/>
 
+        <!-- Browse Button -->
+        <ui:Button Name="BrowseButton" Grid.Row="3" Grid.Column="0" Margin="10,0,10,10" Width="80" 
+                Command="{Binding BrowsePathCommand}">Browse</ui:Button>
+
         <!-- Add Button -->
         <ui:Button Name="AddButton" Grid.Row="2" Grid.Column="1" Margin="0,0,10,10" Width="50" 
                   Command="{Binding AddPathCommand}">Add</ui:Button>

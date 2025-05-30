@@ -4,6 +4,10 @@ using System.Windows;
 using System.Windows.Input;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+// using System.Windows.Forms;
+// using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows.Forms;
 
 namespace EnvVarViewer.ViewModels
 {
@@ -68,6 +72,7 @@ namespace EnvVarViewer.ViewModels
         public RelayCommand RemovePathCommand { get; }
         public ICommand SavePathCommand { get; }
         public RelayCommand CopyPathCommand { get; private set; }
+        public RelayCommand BrowsePathCommand { get; }
 
         /// <summary>
         /// Check if the save button can be pressed
@@ -90,6 +95,7 @@ namespace EnvVarViewer.ViewModels
             RemovePathCommand = new RelayCommand(RemovePath, CanDeletePath);
             SavePathCommand = new RelayCommand(SavePath, CanSavePath);
             CopyPathCommand = new RelayCommand(CopySelectedPath, () => SelectedPath != null);
+            BrowsePathCommand = new RelayCommand(BrowsePath);
         }
 
         // Check if the delete button can be pressed
@@ -133,9 +139,23 @@ namespace EnvVarViewer.ViewModels
         {
             if (SelectedPath != null)
             {
-                Clipboard.SetText(SelectedPath);
+                System.Windows.Clipboard.SetText(SelectedPath);
                 var chunked = SelectedPath.Length >= 25 ? $"{SelectedPath.Substring(0, 25)}..." : SelectedPath;
                 StatusMessage = $"Copied {chunked} to clipboard";
+            }
+        }
+
+        /// <summary>
+        /// Browses for a folder using System.Windows.Forms.FolderBrowserDialog and sets the selected path to NewPathEntry.
+        /// </summary>
+        private void BrowsePath()
+        {
+            var dlg = new FolderBrowserDialog();
+            // Assume currentDirectory is defined somewhere, if not, need to adjust.
+            // dlg.SelectedPath = currentDirectory;
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                NewPathEntry = dlg.SelectedPath;
             }
         }
 
@@ -153,7 +173,7 @@ namespace EnvVarViewer.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to set environment variable: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Failed to set environment variable: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

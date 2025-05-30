@@ -163,7 +163,7 @@ namespace EnvVarViewer.ViewModels
                 try
                 {
                     Process.Start(processInfo);
-                    Application.Current.Shutdown();
+                    System.Windows.Application.Current.Shutdown();
                 }
                 catch (Win32Exception ex)
                 {

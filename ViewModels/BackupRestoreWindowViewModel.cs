@@ -193,7 +193,7 @@ namespace EnvVarViewer.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
                     BackupStatus = "Backup failed";
                     OnPropertyChanged(nameof(BackupStatus));
                 }

@@ -120,15 +120,15 @@ namespace EnvVarViewer
                         }
                     }
 
-                    Application.Current.Dispatcher.Invoke(() => {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => {
                         // Update the backup status immediately
                         BackupStatusTextBlock.Text = "Backup Successful!";
                     });
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Application.Current.Dispatcher.Invoke(() => {
+                    System.Windows.MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => {
                         BackupStatusTextBlock.Text = "Backup failed";
                     });
                 }
@@ -276,13 +276,13 @@ namespace EnvVarViewer
         {
             if (!IsAdministrator() && RestoreSystemVarsCheckBox.IsChecked == true)
             {
-                MessageBox.Show("Restoring system environment variables requires administrator privileges. Please run the program as administrator.", "Insufficient Privileges", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("Restoring system environment variables requires administrator privileges. Please run the program as administrator.", "Insufficient Privileges", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (string.IsNullOrEmpty(selectedBackupFile) || !File.Exists(selectedBackupFile))
             {
-                MessageBox.Show("Please select a valid backup file.", "File Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("Please select a valid backup file.", "File Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -313,11 +313,11 @@ namespace EnvVarViewer
                 }
 
                 RestoreStatusText.Text = $"Successfully restored {restoredCount} environment variables";
-                MessageBox.Show($"Successfully restored {restoredCount} environment variables. Please refresh the main window to see the changes.", "Restore Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show($"Successfully restored {restoredCount} environment variables. Please refresh the main window to see the changes.", "Restore Successful", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred during the restore process: {ex.Message}", "Restore Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"An error occurred during the restore process: {ex.Message}", "Restore Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 RestoreStatusText.Text = "Restore failed";
             }
         }

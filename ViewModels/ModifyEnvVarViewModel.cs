@@ -143,11 +143,11 @@ namespace EnvVarViewer.ViewModels
             }
             catch (System.Security.SecurityException)
             {
-                MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
+                System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred: {ex.Message}");
+                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
             }
         }
 

@@ -195,7 +195,7 @@ namespace EnvVarViewer
                     //     source = "Modified";
                     // }
 
-                    Clipboard.SetText(value);
+                    System.Windows.Clipboard.SetText(value);
                     StatusLabel.Text = $"Copied {selectedVar} ({source}) to clipboard";
                 }
                 else
@@ -211,7 +211,7 @@ namespace EnvVarViewer
             if (selectedItem is KeyValuePair<string, string> keyValuePair)
             {
                 string source = GetSource(keyValuePair.Key, keyValuePair.Value);
-                Clipboard.SetText(keyValuePair.Value);
+                System.Windows.Clipboard.SetText(keyValuePair.Value);
                 StatusLabel.Text = $"Copied {keyValuePair.Key} ({source}) to clipboard";
             }
         }
@@ -317,7 +317,7 @@ namespace EnvVarViewer
 
                     if (value == null)
                     {
-                        MessageBox.Show($"Cannot find the value of environment variable '{selectedVar}'.");
+                        System.Windows.MessageBox.Show($"Cannot find the value of environment variable '{selectedVar}'.");
                         return;
                     }
 
@@ -426,11 +426,11 @@ namespace EnvVarViewer
                         }
                         catch (System.Security.SecurityException)
                         {
-                            MessageBox.Show("Permission denied. You do not have sufficient privileges to delete environment variables at this scope.");
+                            System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to delete environment variables at this scope.");
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"An error occurred: {ex.Message}");
+                            System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
                         }
                     }
                 }
