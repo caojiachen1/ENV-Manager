@@ -40,8 +40,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.get_hash.outputs.hash | slice: 0, 6 }}
-        release_name: Release ${{ steps.get_hash.outputs.hash | slice: 0, 6 }}
+        tag_name: ${{ substring(steps.get_hash.outputs.hash, 0, 6) }}
+        release_name: Release ${{ substring(steps.get_hash.outputs.hash, 0, 6) }}
         body: ${{ github.event.head_commit.message }}
         draft: false
         prerelease: false
