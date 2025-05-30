@@ -31,7 +31,7 @@ jobs:
     - name: Get publish.zip hash
       id: get_hash
       run: |
-        HASH=$(shasum -a 256 ./publish.zip | awk '{print $1}')
+        HASH=$(Get-FileHash -Path ./publish.zip -Algorithm SHA256 | ForEach-Object Hash)
         echo "::set-output name=hash::${HASH}"
 
     - name: Create Release
@@ -40,8 +40,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.get_hash.outputs.hash }}
-        release_name: Release ${{ steps.get_hash.outputs.hash }}
+        tag_name: ${{ steps.get_hash.outputs.hash | truncate(6, end='') }}
+        release_name: Release ${{ steps.get_hash.outputs.hash | truncate(6, end='') }}
         body: ${{ github.event.head_commit.message }}
         draft: false
         prerelease: false
