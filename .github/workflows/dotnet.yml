@@ -28,9 +28,11 @@ jobs:
     - name: Zip publish directory
       run: 7z a publish.zip ./publish/*
 
-    - name: Get current date
-      id: get-date
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+    - name: Get publish.zip hash
+      id: get_hash
+      run: |
+        HASH=$(shasum -a 256 ./publish.zip | awk '{print $1}')
+        echo "::set-output name=hash::${HASH}"
 
     - name: Create Release
       id: create_release
@@ -38,8 +40,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.get-date.outputs.date }}
-        release_name: Release ${{ steps.get-date.outputs.date }}
+        tag_name: ${{ steps.get_hash.outputs.hash }}
+        release_name: Release ${{ steps.get_hash.outputs.hash }}
         body: ${{ github.event.head_commit.message }}
         draft: false
         prerelease: false
