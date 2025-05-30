@@ -1,9 +1,9 @@
-<ui:FluentWindow x:Class="EnvVarViewer.AddModifyEnvVarWindow"
+<ui:FluentWindow x:Class="EnvVarViewer.ModifyEnvVarWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:EnvVarViewer.ViewModels"
-        Title="Add/Modify Environment Variable" Height="250" Width="400"
+        Title="Modify Environment Variable" Height="250" Width="400"
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E" Foreground="White">
     <!-- Main layout grid with margin adjustment -->
@@ -44,7 +44,7 @@
 
         <!-- Window title bar with application icon -->
         <ui:TitleBar
-            Title="Add/Modify Environment Variable"
+            Title="Modify Environment Variable"
             Grid.Row="0"
             Grid.ColumnSpan="2"
             Icon="icon.ico" />

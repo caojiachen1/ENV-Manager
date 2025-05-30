@@ -15,13 +15,9 @@ namespace EnvVarViewer.ViewModels
     {
         private Dictionary<string, string> _userEnvVars;
         private Dictionary<string, string> _systemEnvVars;
-        private Dictionary<string, string> _modifiedEnvVars;
-        private HashSet<string> _deletedEnvVars;
 
         public Dictionary<string, string> UserEnvVars => _userEnvVars;
         public Dictionary<string, string> SystemEnvVars => _systemEnvVars;
-        public Dictionary<string, string> ModifiedEnvVars => _modifiedEnvVars;
-        public HashSet<string> DeletedEnvVars => _deletedEnvVars;
         
         private SortOrder _currentSortOrder;
         private string _searchText;
@@ -40,8 +36,6 @@ namespace EnvVarViewer.ViewModels
         public MainWindowViewModel()
         {
             _envVarModel = new EnvironmentVariableModel(); // Initialize the Model
-            _modifiedEnvVars = new Dictionary<string, string>();
-            _deletedEnvVars = new HashSet<string>();
             _currentSortOrder = SortOrder.Ascending;
             LoadEnvVars();
         }
@@ -118,9 +112,7 @@ namespace EnvVarViewer.ViewModels
 
             // Update the filtered and sorted list of environment variables
             var query = _userEnvVars.Keys
-                .Union(_systemEnvVars.Keys)
-                .Union(_modifiedEnvVars.Keys)
-                .Except(_deletedEnvVars);
+                .Union(_systemEnvVars.Keys);
 
             if (!string.IsNullOrEmpty(SearchText))
             {
@@ -136,8 +128,6 @@ namespace EnvVarViewer.ViewModels
             // Notify property changes for UI updates
             OnPropertyChanged(nameof(UserEnvVars));
             OnPropertyChanged(nameof(SystemEnvVars));
-            OnPropertyChanged(nameof(ModifiedEnvVars));
-            OnPropertyChanged(nameof(DeletedEnvVars));
             
             // Notify main window to refresh the environment variables list
             EnvVarListUpdated?.Invoke(this, EventArgs.Empty);

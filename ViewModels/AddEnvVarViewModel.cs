@@ -6,21 +6,17 @@ using CommunityToolkit.Mvvm.Input;
 namespace EnvVarViewer.ViewModels
 {
     /// <summary>
-    /// ViewModel for Add/Modify Environment Variable Window
+    /// ViewModel for Adding Environment Variable Window
     /// </summary>
-    public class AddModifyEnvVarWindowViewModel : ViewModelBase
+    public class AddEnvVarViewModel : ViewModelBase
     {
         private Dictionary<string, string> _userEnvVars;
         private Dictionary<string, string> _systemEnvVars;
-        private Dictionary<string, string> _modifiedEnvVars;
-        private HashSet<string> _deletedEnvVars;
-        private string _originalName;
         private string _name;
         private string _value;
         private int _selectedScopeIndex;
 
         public event EventHandler EnvVarAdded;
-        public event EventHandler EnvVarModified;
 
         /// <summary>
         /// Environment variable name
@@ -69,44 +65,14 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Initializes a new instance for adding environment variables
         /// </summary>
-        public AddModifyEnvVarWindowViewModel(
+        public AddEnvVarViewModel(
             Dictionary<string, string> userEnvVars,
-            Dictionary<string, string> systemEnvVars,
-            Dictionary<string, string> modifiedEnvVars,
-            HashSet<string> deletedEnvVars)
+            Dictionary<string, string> systemEnvVars)
         {
             _userEnvVars = userEnvVars;
             _systemEnvVars = systemEnvVars;
-            _modifiedEnvVars = modifiedEnvVars;
-            _deletedEnvVars = deletedEnvVars;
-            SelectedScopeIndex = 0; // Default to User
 
             SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
-        }
-
-        /// <summary>
-        /// Initializes a new instance for modifying existing environment variables
-        /// </summary>
-        public AddModifyEnvVarWindowViewModel(
-            Dictionary<string, string> userEnvVars,
-            Dictionary<string, string> systemEnvVars,
-            Dictionary<string, string> modifiedEnvVars,
-            HashSet<string> deletedEnvVars,
-            string name,
-            string value) : this(userEnvVars, systemEnvVars, modifiedEnvVars, deletedEnvVars)
-        {
-            _originalName = name;
-            Name = name;
-            Value = value;
-
-            if (userEnvVars.ContainsKey(name))
-            {
-                SelectedScopeIndex = 0; // User
-            }
-            else if (systemEnvVars.ContainsKey(name))
-            {
-                SelectedScopeIndex = 1; // System
-            }
         }
 
         private bool CanExecuteSave()
@@ -123,7 +89,7 @@ namespace EnvVarViewer.ViewModels
                 _ => "Process"
             };
 
-            if (_originalName == null && (_userEnvVars.ContainsKey(Name) || _systemEnvVars.ContainsKey(Name) || _modifiedEnvVars.ContainsKey(Name)))
+            if (_userEnvVars.ContainsKey(Name) || _systemEnvVars.ContainsKey(Name))
             {
                 MessageBox.Show($"Environment variable '{Name}' already exists.");
                 return;
@@ -139,31 +105,16 @@ namespace EnvVarViewer.ViewModels
 
             try
             {
-                if (_originalName != null && (_userEnvVars.ContainsKey(_originalName) || _systemEnvVars.ContainsKey(_originalName) || _modifiedEnvVars.ContainsKey(_originalName)))
+                Environment.SetEnvironmentVariable(Name, Value, target);
+                if (target == EnvironmentVariableTarget.User)
                 {
-                    Environment.SetEnvironmentVariable(_originalName, null, target);
-                    Environment.SetEnvironmentVariable(Name, Value, target);
-                    _modifiedEnvVars[Name] = Value;
-                    if (_originalName != Name && _modifiedEnvVars.ContainsKey(_originalName))
-                    {
-                        _modifiedEnvVars.Remove(_originalName);
-                    }
-                    if (_deletedEnvVars.Contains(_originalName))
-                    {
-                        _deletedEnvVars.Remove(_originalName);
-                    }
-                    EnvVarModified?.Invoke(this, EventArgs.Empty);
+                    _userEnvVars[Name] = Value;
                 }
-                else
+                else if (target == EnvironmentVariableTarget.Machine)
                 {
-                    Environment.SetEnvironmentVariable(Name, Value, target);
-                    _modifiedEnvVars[Name] = Value;
-                    if (_deletedEnvVars.Contains(Name))
-                    {
-                        _deletedEnvVars.Remove(Name);
-                    }
-                    EnvVarAdded?.Invoke(this, EventArgs.Empty);
+                    _systemEnvVars[Name] = Value;
                 }
+                EnvVarAdded?.Invoke(this, EventArgs.Empty);
 
                 CloseWindow?.Invoke(this, EventArgs.Empty);
             }

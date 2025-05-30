@@ -69,7 +69,7 @@ namespace EnvVarViewer
             {
                 // Get the selected environment variable name
                 string selectedVar = EnvVarListBox.SelectedItem.ToString();
-                if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar) || ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
+                if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
                 {
                     var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
                     var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
@@ -87,17 +87,17 @@ namespace EnvVarViewer
                         systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.SystemEnvVars[selectedVar]));
                     }
 
-                    if (ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
-                    {
-                        if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
-                        {
-                            userItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.ModifiedEnvVars[selectedVar]));
-                        }
-                        else if (ViewModel.SystemEnvVars.ContainsKey(selectedVar))
-                        {
-                            systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.ModifiedEnvVars[selectedVar]));
-                        }
-                    }
+                    // if (ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
+                    // {
+                    //     if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
+                    //     {
+                    //         userItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.ModifiedEnvVars[selectedVar]));
+                    //     }
+                    //     else if (ViewModel.SystemEnvVars.ContainsKey(selectedVar))
+                    //     {
+                    //         systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.ModifiedEnvVars[selectedVar]));
+                    //     }
+                    // }
 
                     StatusLabel.Text = "";
                 }
@@ -150,7 +150,13 @@ namespace EnvVarViewer
 
         private void BackupRestoreButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.Elevate(); // Ensure admin privileges
+            // Call Elevate only when the program is not running with administrator privileges
+            if (!ViewModel.IsAdministrator())
+            {
+                ViewModel.Elevate();
+                return; // Return to avoid further execution if privilege elevation is required
+            }
+            
             var backupRestoreWindow = new BackupRestoreWindow(ViewModel);
             backupRestoreWindow.ShowDialog();
             
@@ -163,7 +169,7 @@ namespace EnvVarViewer
             if (EnvVarListBox.SelectedItem != null)
             {
                 string selectedVar = EnvVarListBox.SelectedItem.ToString();
-                if (ViewModel.SystemEnvVars.ContainsKey(selectedVar) || ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
+                if (ViewModel.SystemEnvVars.ContainsKey(selectedVar) || ViewModel.UserEnvVars.ContainsKey(selectedVar))
                 {
                     string value;
                     string source;
@@ -173,16 +179,21 @@ namespace EnvVarViewer
                         value = ViewModel.SystemEnvVars[selectedVar];
                         source = "System";
                     }
-                    else if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
+                    // else if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
+                    // {
+                    //     value = ViewModel.UserEnvVars[selectedVar];
+                    //     source = "User";
+                    // }
+                    else
                     {
                         value = ViewModel.UserEnvVars[selectedVar];
                         source = "User";
                     }
-                    else
-                    {
-                        value = ViewModel.ModifiedEnvVars[selectedVar];
-                        source = "Modified";
-                    }
+                    // else
+                    // {
+                    //     value = ViewModel.ModifiedEnvVars[selectedVar];
+                    //     source = "Modified";
+                    // }
 
                     Clipboard.SetText(value);
                     StatusLabel.Text = $"Copied {selectedVar} ({source}) to clipboard";
@@ -209,7 +220,6 @@ namespace EnvVarViewer
         {
             bool isUser = ViewModel.UserEnvVars.ContainsKey(key) && ViewModel.UserEnvVars[key] == value;
             bool isSystem = ViewModel.SystemEnvVars.ContainsKey(key) && ViewModel.SystemEnvVars[key] == value;
-            bool isModified = ViewModel.ModifiedEnvVars.ContainsKey(key) && ViewModel.ModifiedEnvVars[key] == value;
 
             if (isUser)
             {
@@ -219,17 +229,19 @@ namespace EnvVarViewer
             {
                 return "System";
             }
-            else if (isModified)
-            {
-                return "Modified";
-            }
             return "Unknown";
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.Elevate();
-            var addWindow = new AddModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, ViewModel.ModifiedEnvVars, ViewModel.DeletedEnvVars);
+            // Call Elevate only when the program is not running with administrator privileges
+            if (!ViewModel.IsAdministrator())
+            {
+                ViewModel.Elevate();
+                return; // Return to avoid further execution if privilege elevation is required
+            }
+            
+            var addWindow = new AddEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars);
             addWindow.EnvVarAdded += (s, ev) =>
             {
                 ViewModel.UpdateListBox();
@@ -239,7 +251,12 @@ namespace EnvVarViewer
 
         private void ModifyButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.Elevate();
+            // Call Elevate only when the program is not running with administrator privileges
+            if (!ViewModel.IsAdministrator())
+            {
+                ViewModel.Elevate();
+                return; // Return to avoid further execution if privilege elevation is required
+            }
 
             if (EnvVarListBox.SelectedItem != null)
             {
@@ -276,7 +293,7 @@ namespace EnvVarViewer
                     }
                     else
                     {
-                        var modifyWindow = new AddModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, ViewModel.ModifiedEnvVars, ViewModel.DeletedEnvVars, selectedVar, value);
+                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value);
                         modifyWindow.EnvVarModified += (s, ev) =>
                         {
                             ViewModel.UpdateListBox();
@@ -286,17 +303,40 @@ namespace EnvVarViewer
                 }
                 else
                 {
-                    string value = (ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null);
+                    string value;
+                    bool isUserVar = ViewModel.UserEnvVars.ContainsKey(selectedVar);
+                    
+                    if (isUserVar)
+                    {
+                        value = ViewModel.UserEnvVars[selectedVar];
+                    }
+                    else
+                    {
+                        value = ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null;
+                    }
+
+                    if (value == null)
+                    {
+                        MessageBox.Show($"Cannot find the value of environment variable '{selectedVar}'.");
+                        return;
+                    }
 
                     if (selectedVar.ToLower() == "path")
                     {
-                        var modifyPathWindow = new ModifyPathWindow(value, false);
+                        var modifyPathWindow = new ModifyPathWindow(value, isUserVar);
                         var modifyPathViewModel = modifyPathWindow.DataContext as ViewModels.ModifyPathWindowViewModel;
                         if (modifyPathViewModel != null)
                         {
                             modifyPathViewModel.PathModified += (ss, se) =>
                             {
-                                ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                                if (isUserVar)
+                                {
+                                    ViewModel.UserEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                                }
+                                else
+                                {
+                                    ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                                }
                                 ViewModel.UpdateListBox();
                             };
                         }
@@ -304,7 +344,7 @@ namespace EnvVarViewer
                     }
                     else
                     {
-                        var modifyWindow = new AddModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, ViewModel.ModifiedEnvVars, ViewModel.DeletedEnvVars, selectedVar, value);
+                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value);
                         modifyWindow.EnvVarModified += (s, ev) =>
                         {
                             ViewModel.UpdateListBox();
@@ -361,11 +401,17 @@ namespace EnvVarViewer
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.Elevate();
+            // Call Elevate only when the program is not running with administrator privileges
+            if (!ViewModel.IsAdministrator())
+            {
+                ViewModel.Elevate();
+                return; // Return to avoid further execution if privilege elevation is required
+            }
+            
             if (EnvVarListBox.SelectedItem != null)
             {
                 string selectedVar = EnvVarListBox.SelectedItem.ToString();
-                if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar) || ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
+                if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
                 {
                     var result = new ConfirmDeleteWindow(selectedVar).ShowDialog();
                     //var result = MessageBox.Show($"Are you sure you want to delete the environment variable '{selectedVar}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -375,11 +421,6 @@ namespace EnvVarViewer
                         {
                             Environment.SetEnvironmentVariable(selectedVar, null, EnvironmentVariableTarget.User);
                             Environment.SetEnvironmentVariable(selectedVar, null, EnvironmentVariableTarget.Machine);
-                            if (ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
-                            {
-                                ViewModel.ModifiedEnvVars.Remove(selectedVar);
-                            }
-                            ViewModel.DeletedEnvVars.Add(selectedVar);
                             ViewModel.UpdateListBox();
                             StatusLabel.Text = $"Deleted {selectedVar}";
                         }
@@ -399,6 +440,7 @@ namespace EnvVarViewer
                 }
             }
         }
+        
         private void PinToTop_Click(object sender, RoutedEventArgs e)
         {
             if (EnvVarListBox.SelectedItem != null)
