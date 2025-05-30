@@ -12,9 +12,10 @@ ENV-Manager is a modern Windows environment variables management tool with graph
 - Clean and intuitive user interface
 
 ## Installation
-1. Download the latest executable version
-2. Double-click the installer and follow the wizard
-3. Launch the application to start using
+1. Navigate to the [Releases](https://github.com/caojiachen1/ENV-Manager/releases) page of the GitHub repository.
+2. Download the latest `portable.zip` file from the assets section of the release.
+3. Extract the contents of the `portable.zip` file.
+4. Navigate to the extracted folder and double - click the main executable file to launch the application.
 
 ## Usage
 1. Main interface displays all current environment variables
@@ -25,11 +26,11 @@ ENV-Manager is a modern Windows environment variables management tool with graph
 ## Building from Source
 1. Prerequisites:
    - .NET 8.0 SDK or later
-   - Visual Studio 2022 (recommended) or VS Code with C# extensions
+   - Visual Studio 2022 or later
 
 2. Build steps:
    ```bash
-   git clone https://github.com/your-repo/ENV-Manager.git
+   git clone https://github.com/caojiachen1/ENV-Manager.git
    cd ENV-Manager
    dotnet restore
    dotnet build
