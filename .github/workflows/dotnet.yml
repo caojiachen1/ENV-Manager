@@ -25,6 +25,9 @@ jobs:
     - name: Publish
       run: dotnet publish -c Release -o ./publish
 
+    - name: Zip publish directory
+      run: 7z a publish.zip ./publish/*
+
     - name: Get current date
       id: get-date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
@@ -48,8 +51,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./publish/setup.zip
-        asset_name: setup.zip
+        asset_path: ./publish.zip
+        asset_name: portable.zip
         asset_content_type: application/zip
 
     - name: Upload artifact
@@ -57,9 +60,6 @@ jobs:
       with:
         name: publish-package
         path: ./publish 
-
-    - name: Zip publish directory
-      run: 7z a publish.zip ./publish/*
 
     # - name: Generate Release Body
     #   id: generate_release_body
