@@ -31,7 +31,7 @@ jobs:
     - name: Get publish.zip hash
       id: get_hash
       run: |
-        HASH=$(Get-FileHash -Path ./publish.zip -Algorithm SHA256 | ForEach-Object Hash).Substring(0, 6)
+        $HASH=(Get-FileHash -Path ./publish.zip -Algorithm SHA256 | ForEach-Object Hash).Substring(0, 6)
         echo "::set-output name=hash::${HASH}"
 
     - name: Create Release
