@@ -120,12 +120,17 @@ namespace EnvVarViewer
                         }
                     }
 
-                    ViewModel.BackupStatus = "Backup Successful!";
+                    Application.Current.Dispatcher.Invoke(() => {
+                        // Update the backup status immediately
+                        BackupStatusTextBlock.Text = "Backup Successful!";
+                    });
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ViewModel.BackupStatus = "Backup failed";
+                    Application.Current.Dispatcher.Invoke(() => {
+                        BackupStatusTextBlock.Text = "Backup failed";
+                    });
                 }
             }
         }
