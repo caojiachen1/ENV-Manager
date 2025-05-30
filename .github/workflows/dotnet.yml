@@ -25,6 +25,10 @@ jobs:
     - name: Publish
       run: dotnet publish -c Release -o ./publish
 
+    - name: Get current date
+      id: get-date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -47,10 +51,6 @@ jobs:
         asset_path: ./setup.zip
         asset_name: setup.zip
         asset_content_type: application/zip
-
-    - name: Get current date
-      id: get-date
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
