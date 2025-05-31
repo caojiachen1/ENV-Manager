@@ -103,9 +103,9 @@ namespace EnvVarViewer
 
         private void SortOrderButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.CurrentSortOrder = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.ViewModels.SortOrder.Ascending) ? 
-                EnvVarViewer.ViewModels.SortOrder.Descending : EnvVarViewer.ViewModels.SortOrder.Ascending;
-            SortOrderButton.Content = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.ViewModels.SortOrder.Ascending) ? "↑" : "↓";
+            ViewModel.CurrentSortOrder = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.Models.SortOrder.Ascending) ? 
+                EnvVarViewer.Models.SortOrder.Descending : EnvVarViewer.Models.SortOrder.Ascending;
+            SortOrderButton.Content = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.Models.SortOrder.Ascending) ? "↑" : "↓";
         }
 
         /// <summary>

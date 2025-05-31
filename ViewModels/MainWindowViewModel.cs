@@ -19,7 +19,7 @@ namespace EnvVarViewer.ViewModels
         private Dictionary<string, string>? _userEnvVars;
         private Dictionary<string, string>? _systemEnvVars;
         
-        private SortOrder _currentSortOrder = SortOrder.Ascending;
+        private EnvVarViewer.Models.SortOrder _currentSortOrder = EnvVarViewer.Models.SortOrder.Ascending;
         private string? _searchText;
         private string _statusText = "Ready";
         private string? _selectedEnvVar;
@@ -73,7 +73,7 @@ namespace EnvVarViewer.ViewModels
             set => SetProperty(ref _selectedEnvVar, value);
         }
 
-        public SortOrder CurrentSortOrder
+        public EnvVarViewer.Models.SortOrder CurrentSortOrder
         {
             get => _currentSortOrder;
             set
@@ -149,7 +149,7 @@ namespace EnvVarViewer.ViewModels
                         query = query.Where(k => k.ToLowerInvariant().Contains(searchLower));
                     }
 
-                    query = CurrentSortOrder == SortOrder.Ascending
+                    query = CurrentSortOrder == EnvVarViewer.Models.SortOrder.Ascending
                         ? query.OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
                         : query.OrderByDescending(k => k, StringComparer.OrdinalIgnoreCase);
 

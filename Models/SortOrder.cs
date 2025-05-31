@@ -1,4 +1,4 @@
-namespace EnvVarViewer.ViewModels
+namespace EnvVarViewer.Models
 {
     public enum SortOrder
     {
