@@ -17,7 +17,6 @@ namespace EnvVarViewer
 {
     public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
-        private List<Window> _windows = new List<Window>();
         public ViewModels.MainWindowViewModel ViewModel { get; private set; }
 
         public MainWindow()
@@ -46,7 +45,7 @@ namespace EnvVarViewer
 
         private void OnEnvVarListUpdated(object sender, EventArgs e)
         {
-            // Batch UI updates to improve performance
+            // Batch UI updates to improve performance with lower priority
             Dispatcher.BeginInvoke(() =>
             {
                 EnvVarListBox.ItemsSource = null;
@@ -119,33 +118,37 @@ namespace EnvVarViewer
                 // Store currently selected variable before refresh
                 string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
 
-                await ViewModel.LoadEnvVarsAsync(); // Use async version
+                await ViewModel.LoadEnvVarsAsync().ConfigureAwait(false); // Optimize with ConfigureAwait
 
-                SearchBox.Text = ""; // Clear search box
-                StatusLabel.Text = "";
-                
-                // Clear the TreeView display first. If no item is re-selected, it remains empty.
-                var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
-                var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
-                userItem.Items.Clear();
-                systemItem.Items.Clear();
-
-                if (!string.IsNullOrEmpty(previouslySelectedVarKey))
+                // Update UI on dispatcher thread
+                Dispatcher.Invoke(() =>
                 {
-                    // EnvVarListBox.ItemsSource is IEnumerable<string> from UpdateListBox()
-                    if (EnvVarListBox.ItemsSource is System.Collections.Generic.IEnumerable<string> items && items.Contains(previouslySelectedVarKey))
+                    SearchBox.Text = ""; // Clear search box
+                    StatusLabel.Text = "";
+                    
+                    // Clear the TreeView display first. If no item is re-selected, it remains empty.
+                    var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
+                    var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
+                    userItem.Items.Clear();
+                    systemItem.Items.Clear();
+
+                    if (!string.IsNullOrEmpty(previouslySelectedVarKey))
                     {
-                        EnvVarListBox.SelectedItem = previouslySelectedVarKey;
-                        // Setting SelectedItem will trigger EnvVarListBox_SelectionChanged,
-                        // which will update the UserEnvList and SystemEnvList in the TreeView with new values.
+                        // EnvVarListBox.ItemsSource is IEnumerable<string> from UpdateListBox()
+                        if (EnvVarListBox.ItemsSource is System.Collections.Generic.IEnumerable<string> items && items.Contains(previouslySelectedVarKey))
+                        {
+                            EnvVarListBox.SelectedItem = previouslySelectedVarKey;
+                            // Setting SelectedItem will trigger EnvVarListBox_SelectionChanged,
+                            // which will update the UserEnvList and SystemEnvList in the TreeView with new values.
+                        }
+                        // If the previously selected item no longer exists (e.g., variable deleted),
+                        // or if ItemsSource is not what we expect, the TreeView remains empty as cleared above.
                     }
-                    // If the previously selected item no longer exists (e.g., variable deleted),
-                    // or if ItemsSource is not what we expect, the TreeView remains empty as cleared above.
-                }
+                });
             }
             catch (Exception ex)
             {
-                StatusLabel.Text = $"Error refreshing: {ex.Message}";
+                Dispatcher.Invoke(() => StatusLabel.Text = $"Error refreshing: {ex.Message}");
             }
         }
 
@@ -319,7 +322,7 @@ namespace EnvVarViewer
                         {
                             ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
                         }
-                        await ViewModel.UpdateListBoxAsync();
+                        await ViewModel.UpdateListBoxAsync().ConfigureAwait(false);
                     };
                 }
                 modifyPathWindow.ShowDialog();
@@ -329,7 +332,7 @@ namespace EnvVarViewer
                 var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value, isUserVar);
                 modifyWindow.EnvVarModified += async (s, ev) =>
                 {
-                    await ViewModel.UpdateListBoxAsync();
+                    await ViewModel.UpdateListBoxAsync().ConfigureAwait(false);
                 };
                 modifyWindow.ShowDialog();
             }

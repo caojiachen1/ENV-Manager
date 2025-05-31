@@ -139,14 +139,14 @@ namespace EnvVarViewer.ViewModels
                             // Write backup file header
                             if (isTxtFormat)
                             {
-                                await file.WriteLineAsync($"Environment Variables Export - {DateTime.Now}\n");
+                                await file.WriteLineAsync($"Environment Variables Export - {DateTime.Now}\n").ConfigureAwait(false);
                             }
                             else
                             {
-                                await file.WriteLineAsync("# Environment Variables Backup File");
-                                await file.WriteLineAsync($"# Creation Time: {DateTime.Now}");
-                                await file.WriteLineAsync("# Format: [Type]:[Variable Name]=[Variable Value]");
-                                await file.WriteLineAsync();
+                                await file.WriteLineAsync("# Environment Variables Backup File").ConfigureAwait(false);
+                                await file.WriteLineAsync($"# Creation Time: {DateTime.Now}").ConfigureAwait(false);
+                                await file.WriteLineAsync("# Format: [Type]:[Variable Name]=[Variable Value]").ConfigureAwait(false);
+                                await file.WriteLineAsync().ConfigureAwait(false);
                             }
 
                             // Backup user environment variables
@@ -156,21 +156,21 @@ namespace EnvVarViewer.ViewModels
                                 
                                 if (isTxtFormat)
                                 {
-                                    await file.WriteLineAsync("[User Variables]");
+                                    await file.WriteLineAsync("[User Variables]").ConfigureAwait(false);
                                     foreach (var kv in MainWindowViewModel.UserEnvVars)
                                     {
-                                        await file.WriteLineAsync($"{kv.Key}={kv.Value}");
+                                        await file.WriteLineAsync($"{kv.Key}={kv.Value}").ConfigureAwait(false);
                                     }
-                                    await file.WriteLineAsync();
+                                    await file.WriteLineAsync().ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    await file.WriteLineAsync("[USER_VARIABLES]");
+                                    await file.WriteLineAsync("[USER_VARIABLES]").ConfigureAwait(false);
                                     foreach (var kv in MainWindowViewModel.UserEnvVars)
                                     {
-                                        await file.WriteLineAsync($"USER:{kv.Key}={kv.Value}");
+                                        await file.WriteLineAsync($"USER:{kv.Key}={kv.Value}").ConfigureAwait(false);
                                     }
-                                    await file.WriteLineAsync();
+                                    await file.WriteLineAsync().ConfigureAwait(false);
                                 }
                             }
 
@@ -181,37 +181,43 @@ namespace EnvVarViewer.ViewModels
                                 
                                 if (isTxtFormat)
                                 {
-                                    await file.WriteLineAsync("[System Variables]");
+                                    await file.WriteLineAsync("[System Variables]").ConfigureAwait(false);
                                     foreach (var kv in MainWindowViewModel.SystemEnvVars)
                                     {
-                                        await file.WriteLineAsync($"{kv.Key}={kv.Value}");
+                                        await file.WriteLineAsync($"{kv.Key}={kv.Value}").ConfigureAwait(false);
                                     }
                                 }
                                 else
                                 {
-                                    await file.WriteLineAsync("[SYSTEM_VARIABLES]");
+                                    await file.WriteLineAsync("[SYSTEM_VARIABLES]").ConfigureAwait(false);
                                     foreach (var kv in MainWindowViewModel.SystemEnvVars)
                                     {
-                                        await file.WriteLineAsync($"SYSTEM:{kv.Key}={kv.Value}");
+                                        await file.WriteLineAsync($"SYSTEM:{kv.Key}={kv.Value}").ConfigureAwait(false);
                                     }
                                 }
                             }
                         }
-                    }, CancellationTokenSource.Token);
+                    }, CancellationTokenSource.Token).ConfigureAwait(false);
 
-                    BackupStatus = "Backup Successful!";
-                    OnPropertyChanged(nameof(BackupStatus));
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        BackupStatus = "Backup Successful!";
+                        OnPropertyChanged(nameof(BackupStatus));
+                    });
                 }
             }
             catch (OperationCanceledException)
             {
-                BackupStatus = "Backup cancelled";
+                System.Windows.Application.Current.Dispatcher.Invoke(() => BackupStatus = "Backup cancelled");
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
-                BackupStatus = "Backup failed";
-                OnPropertyChanged(nameof(BackupStatus));
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    System.Windows.MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    BackupStatus = "Backup failed";
+                    OnPropertyChanged(nameof(BackupStatus));
+                });
             }
             finally
             {

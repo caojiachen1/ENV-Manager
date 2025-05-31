@@ -57,13 +57,7 @@ namespace EnvVarViewer.ViewModels
         public string StatusMessage
         {
             get => _statusMessage;
-            set
-            {
-                if (SetProperty(ref _statusMessage, value))
-                {
-                    OnPropertyChanged(nameof(StatusMessage));
-                }
-            }
+            set => SetProperty(ref _statusMessage, value); // Remove duplicate OnPropertyChanged call
         }
 
         public RelayCommand AddPathCommand { get; private set; }
@@ -150,7 +144,7 @@ namespace EnvVarViewer.ViewModels
         {
             try
             {
-                // Remove empty entries and duplicates
+                // Remove empty entries and duplicates more efficiently
                 var cleanedPaths = PathEntries
                     .Where(p => !string.IsNullOrWhiteSpace(p))
                     .Select(p => p.Trim())
@@ -161,7 +155,18 @@ namespace EnvVarViewer.ViewModels
                 SetEnvironmentVariable(newPathValue);
                 
                 // Update original collection for future comparisons
-                _originalPathEntries = new ObservableCollection<string>(cleanedPaths);
+                _originalPathEntries.Clear();
+                foreach (var path in cleanedPaths)
+                {
+                    _originalPathEntries.Add(path);
+                }
+                
+                // Update current collection to reflect cleaned state
+                PathEntries.Clear();
+                foreach (var path in cleanedPaths)
+                {
+                    PathEntries.Add(path);
+                }
                 
                 PathModified?.Invoke(this, EventArgs.Empty);
                 StatusMessage = "PATH updated successfully";

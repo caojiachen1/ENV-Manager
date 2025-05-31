@@ -24,11 +24,14 @@
         <!-- TitleBar -->
         <ui:TitleBar Title="Modify Path" Grid.Row="0" Grid.ColumnSpan="3" />
 
-        <!-- Path ListBox -->
+        <!-- Path ListBox with virtualization for better performance -->
         <ListBox Name="PathListBox" Grid.Row="1" Grid.ColumnSpan="3" Margin="10" 
                  ItemsSource="{Binding PathEntries}" 
                  SelectedItem="{Binding SelectedPath}"
-                 PreviewMouseDoubleClick="OnPathListBoxDoubleClick" />
+                 PreviewMouseDoubleClick="OnPathListBoxDoubleClick"
+                 VirtualizingPanel.IsVirtualizing="True"
+                 VirtualizingPanel.VirtualizationMode="Recycling"
+                 ScrollViewer.CanContentScroll="True" />
 
         <!-- New Path TextBox and Buttons Row -->
         <TextBox Name="NewPathTextBox" Grid.Row="2" Grid.Column="0" Margin="10,5" 
