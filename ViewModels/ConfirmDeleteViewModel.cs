@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.Generic;
 
 namespace EnvVarViewer.ViewModels
 {
@@ -71,44 +72,38 @@ namespace EnvVarViewer.ViewModels
             ValidateVariable();
         }
 
+        private static readonly HashSet<string> CriticalSystemVariables = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "PATH", "TEMP", "TMP", "SYSTEMROOT", "WINDIR", "APPDATA", 
+            "LOCALAPPDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", 
+            "PROGRAMDATA", "USERPROFILE", "ALLUSERSPROFILE", "COMSPEC",
+            "PATHEXT", "OS", "PROCESSOR_ARCHITECTURE"
+        };
+
         /// <summary>
         /// Validates if the environment variable can be safely deleted
         /// Checks for system critical variables and important development variables
         /// </summary>
         private void ValidateVariable()
         {
-            string upperVarName = VariableName.ToUpper();
-            
-            // Verify if it's a Windows system critical environment variable
-            if (upperVarName == "PATH" || 
-                upperVarName == "TEMP" || 
-                upperVarName == "TMP" || 
-                upperVarName == "SYSTEMROOT" || 
-                upperVarName == "WINDIR" || 
-                upperVarName == "APPDATA" || 
-                upperVarName == "LOCALAPPDATA" || 
-                upperVarName == "PROGRAMFILES" || 
-                upperVarName == "PROGRAMFILES(X86)" || 
-                upperVarName == "PROGRAMDATA" || 
-                upperVarName == "USERPROFILE" || 
-                upperVarName == "ALLUSERSPROFILE")
+            if (CriticalSystemVariables.Contains(VariableName))
             {
                 VariableDescription = "System critical environment variable required for Windows system operation.";
-                WarningMessage = $"System critical variable {VariableName} cannot be deleted! Deletion may cause system instability or crash.";
+                WarningMessage = $"Critical system variable '{VariableName}' cannot be deleted safely!";
                 CanConfirm = false;
                 return;
             }
 
             // Check important development environment variables
             // First check CUDA related variables
-            if (upperVarName.StartsWith("CUDA_PATH"))
+            if (VariableName.StartsWith("CUDA_PATH", StringComparison.OrdinalIgnoreCase))
             {
                 VariableDescription = "Installation path for CUDA Development Toolkit, used for NVIDIA GPU programming and deep learning frameworks.";
                 WarningMessage = "Deleting this variable may affect applications that depend on CUDA!";
                 return;
             }
 
-            switch (upperVarName)
+            switch (VariableName.ToUpper())
             {
                 case "JAVA_HOME":
                     VariableDescription = "Java Development Kit (JDK) installation path, used for Java application development and runtime environment.";

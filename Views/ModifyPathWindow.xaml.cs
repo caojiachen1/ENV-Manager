@@ -1,33 +1,40 @@
 using System;
-using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using EnvVarViewer.ViewModels;
 
 namespace EnvVarViewer
 {
+    /// <summary>
+    /// Interaction logic for ModifyPathWindow.xaml
+    /// </summary>
     public partial class ModifyPathWindow : Wpf.Ui.Controls.FluentWindow
     {
-        private readonly ModifyPathWindowViewModel _viewModel;
-
         public ModifyPathWindow(string pathValue, bool isUserPath)
         {
             InitializeComponent();
-            _viewModel = new ModifyPathWindowViewModel(pathValue, isUserPath);
-            DataContext = _viewModel;
-            _viewModel.PathModified += (s, e) => this.Close();
+            DataContext = new ModifyPathWindowViewModel(pathValue, isUserPath);
         }
 
-        /// <summary>
-        /// Handles the double-click event on the path list to copy the selected path to clipboard
-        /// </summary>
         private void OnPathListBoxDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (_viewModel.SelectedPath != null)
+            if (PathListBox.SelectedItem is string selectedPath && !string.IsNullOrEmpty(selectedPath))
             {
-                _viewModel.CopyPathCommand.Execute(null);
-                e.Handled = true;
+                try
+                {
+                    System.Windows.Clipboard.SetText(selectedPath);
+                    if (DataContext is ModifyPathWindowViewModel viewModel)
+                    {
+                        viewModel.StatusMessage = $"Copied to clipboard: {(selectedPath.Length > 30 ? selectedPath.Substring(0, 30) + "..." : selectedPath)}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (DataContext is ModifyPathWindowViewModel viewModel)
+                    {
+                        viewModel.StatusMessage = $"Failed to copy: {ex.Message}";
+                    }
+                }
             }
         }
     }

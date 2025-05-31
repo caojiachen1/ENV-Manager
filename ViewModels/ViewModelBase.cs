@@ -114,24 +114,34 @@ namespace EnvVarViewer.ViewModels
         /// <param name="operation">The async operation to execute</param>
         /// <param name="loadingMessage">Message to show during loading</param>
         /// <param name="errorPrefix">Prefix for error messages</param>
-        protected async Task ExecuteAsync(Func<CancellationToken, Task> operation, string? loadingMessage = null, string errorPrefix = "Operation failed")
+        /// <param name="suppressExceptions">Whether to suppress exceptions after logging</param>
+        protected async Task ExecuteAsync(Func<CancellationToken, Task> operation, string? loadingMessage = null, string errorPrefix = "Operation failed", bool suppressExceptions = true)
         {
             try
             {
                 SetLoadingState(true, loadingMessage);
                 await operation(CancellationToken).ConfigureAwait(false);
+                SetLoadingState(false);
             }
             catch (OperationCanceledException)
             {
                 SetErrorState("Operation was cancelled");
+                if (!suppressExceptions) throw;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                SetErrorState($"Access denied: {ex.Message}");
+                if (!suppressExceptions) throw;
             }
             catch (Exception ex)
             {
                 SetErrorState($"{errorPrefix}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in {GetType().Name}: {ex}");
+                if (!suppressExceptions) throw;
             }
             finally
             {
-                SetLoadingState(false);
+                if (IsLoading) SetLoadingState(false);
             }
         }
 
@@ -148,6 +158,19 @@ namespace EnvVarViewer.ViewModels
             {
                 SetErrorState($"{fieldName} cannot be empty");
                 return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Validates multiple inputs at once
+        /// </summary>
+        protected bool ValidateInputs(params (string value, string fieldName, bool allowEmpty)[] validations)
+        {
+            foreach (var (value, fieldName, allowEmpty) in validations)
+            {
+                if (!ValidateInput(value, fieldName, allowEmpty))
+                    return false;
             }
             return true;
         }

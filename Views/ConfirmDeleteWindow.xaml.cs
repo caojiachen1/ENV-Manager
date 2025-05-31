@@ -3,6 +3,9 @@ using EnvVarViewer.ViewModels;
 
 namespace EnvVarViewer
 {
+    /// <summary>
+    /// Interaction logic for ConfirmDeleteWindow.xaml
+    /// </summary>
     public partial class ConfirmDeleteWindow : Wpf.Ui.Controls.FluentWindow
     {
         private readonly ConfirmDeleteViewModel _viewModel;
@@ -12,9 +15,13 @@ namespace EnvVarViewer
             InitializeComponent();
             _viewModel = new ConfirmDeleteViewModel(variableName);
             DataContext = _viewModel;
-            _viewModel.CloseWindow = Close;
+            _viewModel.CloseWindow = () => this.Close();
+        }
 
-            Closing += (s, e) => DialogResult = _viewModel.DialogResult;
+        public new bool? ShowDialog()
+        {
+            base.ShowDialog();
+            return _viewModel.DialogResult;
         }
     }
 }

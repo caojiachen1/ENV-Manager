@@ -251,109 +251,87 @@ namespace EnvVarViewer
             return "Unknown";
         }
 
-        private void ModifyButton_Click(object sender, RoutedEventArgs e)
+        private async void ModifyButton_Click(object sender, RoutedEventArgs e)
         {
-            // Call Elevate only when the program is not running with administrator privileges
-            if (!ViewModel.IsAdministrator())
+            try
             {
-                ViewModel.Elevate();
-                return; // Return to avoid further execution if privilege elevation is required
+                if (!await EnsureAdminPrivilegesAsync()) return;
+
+                if (EnvVarListBox.SelectedItem != null)
+                {
+                    string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                    var selectedNode = GetSelectedTreeViewNode();
+
+                    if (selectedNode != null)
+                    {
+                        bool isUserNode = selectedNode.Header.ToString() == "User";
+                        string value = isUserNode ?
+                                        (ViewModel.UserEnvVars.ContainsKey(selectedVar) ? ViewModel.UserEnvVars[selectedVar] : null) :
+                                        (ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null);
+
+                        await OpenModifyWindowAsync(selectedVar, value, isUserNode);
+                    }
+                    else
+                    {
+                        string value;
+                        bool isUserVar = ViewModel.UserEnvVars.ContainsKey(selectedVar);
+                        
+                        if (isUserVar)
+                        {
+                            value = ViewModel.UserEnvVars[selectedVar];
+                        }
+                        else
+                        {
+                            value = ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null;
+                        }
+
+                        if (value == null)
+                        {
+                            StatusLabel.Text = $"Cannot find the value of environment variable '{selectedVar}'.";
+                            return;
+                        }
+
+                        await OpenModifyWindowAsync(selectedVar, value, isUserVar);
+                    }
+                }
             }
-
-            if (EnvVarListBox.SelectedItem != null)
+            catch (Exception ex)
             {
-                string selectedVar = EnvVarListBox.SelectedItem.ToString();
-                var selectedNode = GetSelectedTreeViewNode();
+                StatusLabel.Text = $"Error: {ex.Message}";
+            }
+        }
 
-                if (selectedNode != null)
+        private async Task OpenModifyWindowAsync(string selectedVar, string value, bool isUserVar)
+        {
+            if (selectedVar.ToLower() == "path")
+            {
+                var modifyPathWindow = new ModifyPathWindow(value, isUserVar);
+                var modifyPathViewModel = modifyPathWindow.DataContext as ViewModels.ModifyPathWindowViewModel;
+                if (modifyPathViewModel != null)
                 {
-                    bool isUserNode = selectedNode.Header.ToString() == "User";
-                    string value = isUserNode ?
-                                    (ViewModel.UserEnvVars.ContainsKey(selectedVar) ? ViewModel.UserEnvVars[selectedVar] : null) :
-                                    (ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null);
-
-                    if (selectedVar.ToLower() == "path")
+                    modifyPathViewModel.PathModified += async (ss, se) =>
                     {
-                        var modifyPathWindow = new ModifyPathWindow(value, isUserNode);
-                        var modifyPathViewModel = modifyPathWindow.DataContext as ViewModels.ModifyPathWindowViewModel;
-                        if (modifyPathViewModel != null)
+                        if (isUserVar)
                         {
-                            modifyPathViewModel.PathModified += (ss, se) =>
-                            {
-                                if (isUserNode)
-                                {
-                                    ViewModel.UserEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
-                                }
-                                else
-                                {
-                                    ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
-                                }
-                                ViewModel.UpdateListBox();
-                            };
+                            ViewModel.UserEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
                         }
-                        modifyPathWindow.ShowDialog();
-                    }
-                    else
-                    {
-                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value, isUserNode);
-                        modifyWindow.EnvVarModified += (s, ev) =>
+                        else
                         {
-                            ViewModel.UpdateListBox();
-                        };
-                        modifyWindow.ShowDialog();
-                    }
+                            ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
+                        }
+                        await ViewModel.UpdateListBoxAsync();
+                    };
                 }
-                else
+                modifyPathWindow.ShowDialog();
+            }
+            else
+            {
+                var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value, isUserVar);
+                modifyWindow.EnvVarModified += async (s, ev) =>
                 {
-                    string value;
-                    bool isUserVar = ViewModel.UserEnvVars.ContainsKey(selectedVar);
-                    
-                    if (isUserVar)
-                    {
-                        value = ViewModel.UserEnvVars[selectedVar];
-                    }
-                    else
-                    {
-                        value = ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null;
-                    }
-
-                    if (value == null)
-                    {
-                        System.Windows.MessageBox.Show($"Cannot find the value of environment variable '{selectedVar}'.");
-                        return;
-                    }
-
-                    if (selectedVar.ToLower() == "path")
-                    {
-                        var modifyPathWindow = new ModifyPathWindow(value, isUserVar);
-                        var modifyPathViewModel = modifyPathWindow.DataContext as ViewModels.ModifyPathWindowViewModel;
-                        if (modifyPathViewModel != null)
-                        {
-                            modifyPathViewModel.PathModified += (ss, se) =>
-                            {
-                                if (isUserVar)
-                                {
-                                    ViewModel.UserEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
-                                }
-                                else
-                                {
-                                    ViewModel.SystemEnvVars[selectedVar] = string.Join(";", modifyPathViewModel.PathEntries);
-                                }
-                                ViewModel.UpdateListBox();
-                            };
-                        }
-                        modifyPathWindow.ShowDialog();
-                    }
-                    else
-                    {
-                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value, true);
-                        modifyWindow.EnvVarModified += (s, ev) =>
-                        {
-                            ViewModel.UpdateListBox();
-                        };
-                        modifyWindow.ShowDialog();
-                    }
-                }
+                    await ViewModel.UpdateListBoxAsync();
+                };
+                modifyWindow.ShowDialog();
             }
         }
 
