@@ -148,12 +148,14 @@ namespace EnvVarViewer.ViewModels
         private void OnConfirm()
         {
             DialogResult = true;
+            SetStatusMessage($"Confirmed deletion of variable '{VariableName}'");
             CloseWindow?.Invoke();
         }
 
         private void OnCancel()
         {
             DialogResult = false;
+            SetStatusMessage("Deletion cancelled");
             CloseWindow?.Invoke();
         }
 

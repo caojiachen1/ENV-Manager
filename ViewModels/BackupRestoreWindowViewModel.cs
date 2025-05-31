@@ -22,8 +22,7 @@ namespace EnvVarViewer.ViewModels
         private bool _backupSystemVars = true;
         private bool _restoreUserVars = true;
         private bool _restoreSystemVars = true;
-        private string _backupStatus;
-        private string _restoreStatus;
+        // Remove individual status fields - use base StatusMessage
         public event PropertyChangedEventHandler PropertyChanged;
 
         private AsyncRelayCommand _backupCommand;
@@ -69,17 +68,6 @@ namespace EnvVarViewer.ViewModels
             set => SetField(ref _restoreSystemVars, value);
         }
 
-        public string BackupStatus
-        {
-            get => _backupStatus;
-            set => SetField(ref _backupStatus, value);
-        }
-
-        public string RestoreStatus
-        {
-            get => _restoreStatus;
-            set => SetField(ref _restoreStatus, value);
-        }
         public MainWindowViewModel MainWindowViewModel { get; set;}
 
         public BackupRestoreWindowViewModel(ViewModels.MainWindowViewModel viewModel)
@@ -114,6 +102,7 @@ namespace EnvVarViewer.ViewModels
             try
             {
                 SetLoadingState(true, "Creating backup...");
+                SetStatusMessage("Starting backup process...");
                 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var saveFileDialog = new Microsoft.Win32.SaveFileDialog
@@ -145,6 +134,8 @@ namespace EnvVarViewer.ViewModels
                                 await file.WriteLineAsync().ConfigureAwait(false);
                             }
 
+                            int totalVars = 0;
+
                             // Backup user environment variables
                             if (BackupUserVars)
                             {
@@ -156,6 +147,7 @@ namespace EnvVarViewer.ViewModels
                                     foreach (var kv in MainWindowViewModel.UserEnvVars)
                                     {
                                         await file.WriteLineAsync($"{kv.Key}={kv.Value}").ConfigureAwait(false);
+                                        totalVars++;
                                     }
                                     await file.WriteLineAsync().ConfigureAwait(false);
                                 }
@@ -165,6 +157,7 @@ namespace EnvVarViewer.ViewModels
                                     foreach (var kv in MainWindowViewModel.UserEnvVars)
                                     {
                                         await file.WriteLineAsync($"USER:{kv.Key}={kv.Value}").ConfigureAwait(false);
+                                        totalVars++;
                                     }
                                     await file.WriteLineAsync().ConfigureAwait(false);
                                 }
@@ -181,6 +174,7 @@ namespace EnvVarViewer.ViewModels
                                     foreach (var kv in MainWindowViewModel.SystemEnvVars)
                                     {
                                         await file.WriteLineAsync($"{kv.Key}={kv.Value}").ConfigureAwait(false);
+                                        totalVars++;
                                     }
                                 }
                                 else
@@ -189,30 +183,37 @@ namespace EnvVarViewer.ViewModels
                                     foreach (var kv in MainWindowViewModel.SystemEnvVars)
                                     {
                                         await file.WriteLineAsync($"SYSTEM:{kv.Key}={kv.Value}").ConfigureAwait(false);
+                                        totalVars++;
                                     }
                                 }
                             }
+
+                            return totalVars;
                         }
                     }, CancellationTokenSource.Token).ConfigureAwait(false);
 
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        BackupStatus = "Backup Successful!";
-                        OnPropertyChanged(nameof(BackupStatus));
+                        int userCount = BackupUserVars ? MainWindowViewModel.UserEnvVars.Count : 0;
+                        int systemCount = BackupSystemVars ? MainWindowViewModel.SystemEnvVars.Count : 0;
+                        SetStatusMessage($"Backup successful! Saved {userCount} user and {systemCount} system variables to {Path.GetFileName(saveFileDialog.FileName)}");
                     });
+                }
+                else
+                {
+                    SetStatusMessage("Backup cancelled by user");
                 }
             }
             catch (OperationCanceledException)
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() => BackupStatus = "Backup cancelled");
+                SetStatusMessage("Backup cancelled");
             }
             catch (Exception ex)
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     System.Windows.MessageBox.Show($"An error occurred during the backup process: {ex.Message}", "Backup error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    BackupStatus = "Backup failed";
-                    OnPropertyChanged(nameof(BackupStatus));
+                    SetStatusMessage($"Backup failed: {ex.Message}", true);
                 });
             }
             finally
@@ -226,6 +227,7 @@ namespace EnvVarViewer.ViewModels
             try
             {
                 SetLoadingState(true, "Restoring from backup...");
+                SetStatusMessage("Starting restore process...");
                 
                 var openFileDialog = new Microsoft.Win32.OpenFileDialog
                 {
@@ -237,16 +239,20 @@ namespace EnvVarViewer.ViewModels
                 {
                     SelectedBackupFile = openFileDialog.FileName;
                     await LoadBackupPreviewAsync(SelectedBackupFile);
-                    RestoreStatus = "Restore completed successfully";
+                    SetStatusMessage($"Restore completed successfully from {Path.GetFileName(SelectedBackupFile)}");
+                }
+                else
+                {
+                    SetStatusMessage("Restore cancelled by user");
                 }
             }
             catch (OperationCanceledException)
             {
-                RestoreStatus = "Restore cancelled";
+                SetStatusMessage("Restore cancelled");
             }
             catch (Exception ex)
             {
-                RestoreStatus = $"Restore failed: {ex.Message}";
+                SetStatusMessage($"Restore failed: {ex.Message}", true);
             }
             finally
             {

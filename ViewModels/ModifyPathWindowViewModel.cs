@@ -18,7 +18,6 @@ namespace EnvVarViewer.ViewModels
         private ObservableCollection<string> _originalPathEntries;
         private string _newPathEntry;
         private string _selectedPath;
-        private string _statusMessage;
         private readonly bool _isUserPath;
 
         public ObservableCollection<string> PathEntries
@@ -50,12 +49,6 @@ namespace EnvVarViewer.ViewModels
                     CopyPathCommand.NotifyCanExecuteChanged(); // Update copy command availability
                 }
             }
-        }
-
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set => SetProperty(ref _statusMessage, value); // Remove duplicate OnPropertyChanged call
         }
 
         public RelayCommand AddPathCommand { get; private set; }
@@ -120,24 +113,6 @@ namespace EnvVarViewer.ViewModels
                    !PathEntries.Any(p => string.Equals(p, trimmed, StringComparison.OrdinalIgnoreCase));
         }
 
-        private void AddPath()
-        {
-            string newEntry = NewPathEntry.Trim();
-            PathEntries.Add(newEntry);
-            NewPathEntry = string.Empty;
-            ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged(); // Update save button availability
-        }
-
-        private void RemovePath()
-        {
-            if (SelectedPath != null)
-            {
-                PathEntries.Remove(SelectedPath);
-                SelectedPath = null;
-                ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged(); // Update save button availability
-            }
-        }
-
         private void SavePath()
         {
             try
@@ -167,11 +142,11 @@ namespace EnvVarViewer.ViewModels
                 }
                 
                 PathModified?.Invoke(this, EventArgs.Empty);
-                StatusMessage = "PATH updated successfully";
+                SetStatusMessage("PATH updated successfully");
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Failed to update PATH: {ex.Message}";
+                SetStatusMessage($"Failed to update PATH: {ex.Message}", true);
             }
         }
 
@@ -179,9 +154,51 @@ namespace EnvVarViewer.ViewModels
         {
             if (SelectedPath != null)
             {
-                System.Windows.Clipboard.SetText(SelectedPath);
-                var chunked = SelectedPath.Length >= 25 ? $"{SelectedPath.Substring(0, 25)}..." : SelectedPath;
-                StatusMessage = $"Copied {chunked} to clipboard";
+                try
+                {
+                    System.Windows.Clipboard.SetText(SelectedPath);
+                    var chunked = SelectedPath.Length >= 25 ? $"{SelectedPath.Substring(0, 25)}..." : SelectedPath;
+                    SetStatusMessage($"Copied {chunked} to clipboard");
+                }
+                catch (Exception ex)
+                {
+                    SetStatusMessage($"Failed to copy: {ex.Message}", true);
+                }
+            }
+        }
+
+        private void AddPath()
+        {
+            try
+            {
+                string newEntry = NewPathEntry.Trim();
+                PathEntries.Add(newEntry);
+                NewPathEntry = string.Empty;
+                ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged(); // Update save button availability
+                SetStatusMessage($"Added path: {newEntry}");
+            }
+            catch (Exception ex)
+            {
+                SetStatusMessage($"Failed to add path: {ex.Message}", true);
+            }
+        }
+
+        private void RemovePath()
+        {
+            if (SelectedPath != null)
+            {
+                try
+                {
+                    string removedPath = SelectedPath;
+                    PathEntries.Remove(SelectedPath);
+                    SelectedPath = null;
+                    ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged(); // Update save button availability
+                    SetStatusMessage($"Removed path: {removedPath}");
+                }
+                catch (Exception ex)
+                {
+                    SetStatusMessage($"Failed to remove path: {ex.Message}", true);
+                }
             }
         }
 
@@ -190,10 +207,18 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         private void BrowsePath()
         {
-            var dlg = new FolderBrowserDialog();
-            if (dlg.ShowDialog() == DialogResult.OK)
+            try
             {
-                NewPathEntry = dlg.SelectedPath;
+                var dlg = new FolderBrowserDialog();
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    NewPathEntry = dlg.SelectedPath;
+                    SetStatusMessage($"Selected folder: {dlg.SelectedPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetStatusMessage($"Failed to browse folder: {ex.Message}", true);
             }
         }
 

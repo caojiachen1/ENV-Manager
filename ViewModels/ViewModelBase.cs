@@ -16,6 +16,7 @@ namespace EnvVarViewer.ViewModels
         private bool _isLoading;
         private string? _loadingMessage;
         private string? _errorMessage;
+        private string? _statusMessage;
         private CancellationTokenSource? _cancellationTokenSource;
         private bool _disposed;
 
@@ -46,6 +47,15 @@ namespace EnvVarViewer.ViewModels
             protected set => SetProperty(ref _errorMessage, value);
         }
 
+        /// <summary>
+        /// General status message for user feedback
+        /// </summary>
+        public string? StatusMessage
+        {
+            get => _statusMessage;
+            protected set => SetProperty(ref _statusMessage, value);
+        }
+        
         /// <summary>
         /// Cancellation token source for async operations
         /// </summary>
@@ -219,6 +229,30 @@ namespace EnvVarViewer.ViewModels
                 _cancellationTokenSource = null;
                 _disposed = true;
             }
+        }
+
+        /// <summary>
+        /// Sets a status message for user feedback
+        /// </summary>
+        /// <param name="message">Status message to display</param>
+        /// <param name="isError">Whether this is an error message</param>
+        public void SetStatusMessage(string message, bool isError = false)
+        {
+            StatusMessage = message;
+            if (isError)
+            {
+                ErrorMessage = message;
+            }
+        }
+
+        /// <summary>
+        /// Clears all status and error messages
+        /// </summary>
+        public void ClearMessages()
+        {
+            StatusMessage = null;
+            ErrorMessage = null;
+            LoadingMessage = null;
         }
     }
 }

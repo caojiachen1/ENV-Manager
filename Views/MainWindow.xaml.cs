@@ -35,6 +35,7 @@ namespace EnvVarViewer
             // Check if running as administrator, if not elevate privileges
             if (!ViewModel.IsAdministrator())
             {
+                ViewModel.SetStatusMessage("Elevating to administrator privileges...");
                 ViewModel.Elevate();
                 return; // The program will restart with admin privileges
             }
@@ -50,6 +51,7 @@ namespace EnvVarViewer
             {
                 EnvVarListBox.ItemsSource = null;
                 EnvVarListBox.ItemsSource = ViewModel.EnvVarList;
+                ViewModel.SetStatusMessage($"Updated environment variables list with {ViewModel.EnvVarList?.Count() ?? 0} items");
             }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -80,11 +82,11 @@ namespace EnvVarViewer
                         systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.SystemEnvVars[selectedVar]));
                     }
 
-                    StatusLabel.Text = "";
+                    ViewModel.SetStatusMessage($"Selected variable: {selectedVar}");
                 }
                 else
                 {
-                    StatusLabel.Text = "Environment variable not found";
+                    ViewModel.SetStatusMessage("Environment variable not found", true);
                 }
             }
         }
@@ -94,6 +96,7 @@ namespace EnvVarViewer
             ViewModel.CurrentSortOrder = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.Models.SortOrder.Ascending) ? 
                 EnvVarViewer.Models.SortOrder.Descending : EnvVarViewer.Models.SortOrder.Ascending;
             SortOrderButton.Content = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.Models.SortOrder.Ascending) ? "↑" : "↓";
+            ViewModel.SetStatusMessage($"Sort order changed to {ViewModel.CurrentSortOrder}");
         }
 
         /// <summary>
@@ -103,6 +106,8 @@ namespace EnvVarViewer
         {
             try
             {
+                ViewModel.SetStatusMessage("Refreshing environment variables...");
+                
                 // Store currently selected variable before refresh
                 string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
 
@@ -112,7 +117,6 @@ namespace EnvVarViewer
                 Dispatcher.Invoke(() =>
                 {
                     SearchBox.Text = ""; // Clear search box
-                    StatusLabel.Text = "";
                     
                     // Clear the TreeView display first. If no item is re-selected, it remains empty.
                     var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
@@ -132,11 +136,13 @@ namespace EnvVarViewer
                         // If the previously selected item no longer exists (e.g., variable deleted),
                         // or if ItemsSource is not what we expect, the TreeView remains empty as cleared above.
                     }
+                    
+                    ViewModel.SetStatusMessage("Environment variables refreshed successfully");
                 });
             }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() => StatusLabel.Text = $"Error refreshing: {ex.Message}");
+                Dispatcher.Invoke(() => ViewModel.SetStatusMessage($"Error refreshing: {ex.Message}", true));
             }
         }
 
@@ -154,6 +160,7 @@ namespace EnvVarViewer
         {
             if (!await EnsureAdminPrivilegesAsync()) return;
             
+            ViewModel.SetStatusMessage("Opening backup/restore window...");
             var backupRestoreWindow = new BackupRestoreWindow(ViewModel);
             backupRestoreWindow.ShowDialog();
             
@@ -164,6 +171,7 @@ namespace EnvVarViewer
         {
             if (!await EnsureAdminPrivilegesAsync()) return;
             
+            ViewModel.SetStatusMessage("Opening add variable window...");
             var addWindow = new AddEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars);
             addWindow.EnvVarAdded += async (s, ev) => await ViewModel.UpdateListBoxAsync();
             addWindow.ShowDialog();
@@ -196,11 +204,11 @@ namespace EnvVarViewer
                     }
 
                     System.Windows.Clipboard.SetText(value);
-                    StatusLabel.Text = $"Copied {selectedVar} ({source}) to clipboard";
+                    ViewModel.SetStatusMessage($"Copied {selectedVar} ({source}) to clipboard");
                 }
                 else
                 {
-                    StatusLabel.Text = $"Environment variable {selectedVar} not found";
+                    ViewModel.SetStatusMessage($"Environment variable {selectedVar} not found", true);
                 }
             }
         }
@@ -212,7 +220,7 @@ namespace EnvVarViewer
             {
                 string source = GetSource(keyValuePair.Key, keyValuePair.Value);
                 System.Windows.Clipboard.SetText(keyValuePair.Value);
-                StatusLabel.Text = $"Copied {keyValuePair.Key} ({source}) to clipboard";
+                ViewModel.SetStatusMessage($"Copied {keyValuePair.Key} ({source}) to clipboard");
             }
         }
 
@@ -241,6 +249,8 @@ namespace EnvVarViewer
                 if (EnvVarListBox.SelectedItem != null)
                 {
                     string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                    ViewModel.SetStatusMessage($"Opening modify window for {selectedVar}...");
+                    
                     var selectedNode = GetSelectedTreeViewNode();
 
                     if (selectedNode != null)
@@ -268,7 +278,7 @@ namespace EnvVarViewer
 
                         if (value == null)
                         {
-                            StatusLabel.Text = $"Cannot find the value of environment variable '{selectedVar}'.";
+                            ViewModel.SetStatusMessage($"Cannot find the value of environment variable '{selectedVar}'.", true);
                             return;
                         }
 
@@ -278,7 +288,7 @@ namespace EnvVarViewer
             }
             catch (Exception ex)
             {
-                StatusLabel.Text = $"Error: {ex.Message}";
+                ViewModel.SetStatusMessage($"Error: {ex.Message}", true);
             }
         }
 
@@ -376,11 +386,13 @@ namespace EnvVarViewer
                     string selectedVar = EnvVarListBox.SelectedItem.ToString();
                     if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
                     {
+                        ViewModel.SetStatusMessage($"Confirming deletion of {selectedVar}...");
                         var result = new ConfirmDeleteWindow(selectedVar).ShowDialog();
                         if (result == true)
                         {
                             try
                             {
+                                ViewModel.SetStatusMessage($"Deleting {selectedVar}...");
                                 bool success = await ViewModel.DeleteEnvVarAsync(selectedVar, EnvironmentVariableTarget.User);
                                 if (success)
                                 {
@@ -389,32 +401,38 @@ namespace EnvVarViewer
                                 
                                 if (success)
                                 {
-                                    StatusLabel.Text = $"Deleted {selectedVar}";
+                                    ViewModel.SetStatusMessage($"Successfully deleted {selectedVar}");
                                 }
                                 else
                                 {
-                                    StatusLabel.Text = $"Failed to delete {selectedVar}";
+                                    ViewModel.SetStatusMessage($"Failed to delete {selectedVar}", true);
                                 }
                             }
                             catch (System.Security.SecurityException)
                             {
                                 System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to delete environment variables at this scope.");
+                                ViewModel.SetStatusMessage("Deletion failed: Permission denied", true);
                             }
                             catch (Exception ex)
                             {
                                 System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
+                                ViewModel.SetStatusMessage($"Deletion failed: {ex.Message}", true);
                             }
+                        }
+                        else
+                        {
+                            ViewModel.SetStatusMessage("Deletion cancelled");
                         }
                     }
                     else
                     {
-                        StatusLabel.Text = $"Environment variable {selectedVar} not found";
+                        ViewModel.SetStatusMessage($"Environment variable {selectedVar} not found", true);
                     }
                 }
             }
             catch (Exception ex)
             {
-                StatusLabel.Text = $"Error: {ex.Message}";
+                ViewModel.SetStatusMessage($"Error: {ex.Message}", true);
             }
         }
 
@@ -429,6 +447,7 @@ namespace EnvVarViewer
                     var newOrder = items.OrderByDescending(item => item == selectedVar).ToList();
                     EnvVarListBox.ItemsSource = newOrder;
                     EnvVarListBox.SelectedItem = selectedVar;
+                    ViewModel.SetStatusMessage($"Pinned {selectedVar} to top");
                 }
             }
         }

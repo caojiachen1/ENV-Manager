@@ -25,14 +25,15 @@ namespace EnvVarViewer
                     System.Windows.Clipboard.SetText(selectedPath);
                     if (DataContext is ModifyPathWindowViewModel viewModel)
                     {
-                        viewModel.StatusMessage = $"Copied to clipboard: {(selectedPath.Length > 30 ? selectedPath.Substring(0, 30) + "..." : selectedPath)}";
+                        var truncated = selectedPath.Length > 30 ? selectedPath.Substring(0, 30) + "..." : selectedPath;
+                        viewModel.SetStatusMessage($"Copied to clipboard: {truncated}");
                     }
                 }
                 catch (Exception ex)
                 {
                     if (DataContext is ModifyPathWindowViewModel viewModel)
                     {
-                        viewModel.StatusMessage = $"Failed to copy: {ex.Message}";
+                        viewModel.SetStatusMessage($"Failed to copy: {ex.Message}", true);
                     }
                 }
             }

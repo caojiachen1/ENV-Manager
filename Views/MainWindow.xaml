@@ -111,7 +111,7 @@
 
         <!-- Status Bar for displaying operation messages -->
         <TextBlock x:Name="StatusLabel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
-                   Text="{Binding StatusText}"
+                   Text="{Binding StatusMessage, UpdateSourceTrigger=PropertyChanged}"
                    Foreground="Green" FontSize="14" 
                    Margin="20,0,0,10"
                    HorizontalAlignment="Left"/>

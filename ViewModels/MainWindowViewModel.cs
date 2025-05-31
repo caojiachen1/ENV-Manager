@@ -21,7 +21,6 @@ namespace EnvVarViewer.ViewModels
         
         private EnvVarViewer.Models.SortOrder _currentSortOrder = EnvVarViewer.Models.SortOrder.Ascending;
         private string? _searchText;
-        private string _statusText = "Ready";
         private string? _selectedEnvVar;
         private IEnumerable<string>? _envVarList;
         private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
@@ -61,11 +60,7 @@ namespace EnvVarViewer.ViewModels
             }
         }
 
-        public string StatusText
-        {
-            get => _statusText;
-            set => SetProperty(ref _statusText, value);
-        }
+        public string StatusText => StatusMessage ?? "Ready";
 
         public string? SelectedEnvVar
         {
@@ -117,7 +112,7 @@ namespace EnvVarViewer.ViewModels
                     
                     // Update status on UI thread
                     System.Windows.Application.Current.Dispatcher.Invoke(() => 
-                        StatusText = $"Loaded {_userEnvVars.Count} user and {_systemEnvVars.Count} system variables");
+                        SetStatusMessage($"Loaded {_userEnvVars.Count} user and {_systemEnvVars.Count} system variables"));
                 }, "Loading environment variables...", "Failed to load environment variables");
             }
             finally
@@ -180,7 +175,7 @@ namespace EnvVarViewer.ViewModels
                     await LoadEnvVarsAsync().ConfigureAwait(false);
                 }, $"Setting environment variable '{name}'...", "Failed to set environment variable");
 
-                StatusText = $"Environment variable '{name}' set successfully";
+                SetStatusMessage($"Environment variable '{name}' set successfully");
                 return true;
             }
             catch
@@ -205,7 +200,7 @@ namespace EnvVarViewer.ViewModels
                     await LoadEnvVarsAsync().ConfigureAwait(false);
                 }, $"Deleting environment variable '{name}'...", "Failed to delete environment variable");
 
-                StatusText = $"Environment variable '{name}' deleted successfully";
+                SetStatusMessage($"Environment variable '{name}' deleted successfully");
                 return true;
             }
             catch
@@ -222,11 +217,11 @@ namespace EnvVarViewer.ViewModels
             try
             {
                 CancellationTokenSource?.Cancel();
-                StatusText = "Operations cancelled";
+                SetStatusMessage("Operations cancelled");
             }
             catch (Exception ex)
             {
-                StatusText = $"Error cancelling operations: {ex.Message}";
+                SetStatusMessage($"Error cancelling operations: {ex.Message}", true);
             }
         }
 
@@ -261,11 +256,11 @@ namespace EnvVarViewer.ViewModels
             IsLoading = isLoading;
             if (!string.IsNullOrEmpty(statusMessage))
             {
-                StatusText = statusMessage;
+                SetStatusMessage(statusMessage);
             }
             else if (!isLoading)
             {
-                StatusText = "Ready";
+                SetStatusMessage("Ready");
             }
         }
 
@@ -287,7 +282,7 @@ namespace EnvVarViewer.ViewModels
                     else
                     {
                         System.Windows.Application.Current.Dispatcher.Invoke(() => 
-                            StatusText = "Administrator privileges required to continue");
+                            SetStatusMessage("Administrator privileges required to continue"));
                     }
                 }
             }, "Elevating privileges...", "Failed to elevate privileges");
@@ -315,7 +310,7 @@ namespace EnvVarViewer.ViewModels
                 {
                     if (ex.NativeErrorCode == 1223)
                     {
-                        StatusText = "Administrator privileges required to continue";
+                        SetStatusMessage("Administrator privileges required to continue");
                     }
                     else
                     {
