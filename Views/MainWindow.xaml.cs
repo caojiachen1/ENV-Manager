@@ -80,18 +80,6 @@ namespace EnvVarViewer
                         systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.SystemEnvVars[selectedVar]));
                     }
 
-                    // if (ViewModel.ModifiedEnvVars.ContainsKey(selectedVar))
-                    // {
-                    //     if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
-                    //     {
-                    //         userItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.ModifiedEnvVars[selectedVar]));
-                    //     }
-                    //     else if (ViewModel.SystemEnvVars.ContainsKey(selectedVar))
-                    //     {
-                    //         systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.ModifiedEnvVars[selectedVar]));
-                    //     }
-                    // }
-
                     StatusLabel.Text = "";
                 }
                 else
@@ -201,21 +189,11 @@ namespace EnvVarViewer
                         value = ViewModel.SystemEnvVars[selectedVar];
                         source = "System";
                     }
-                    // else if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
-                    // {
-                    //     value = ViewModel.UserEnvVars[selectedVar];
-                    //     source = "User";
-                    // }
                     else
                     {
                         value = ViewModel.UserEnvVars[selectedVar];
                         source = "User";
                     }
-                    // else
-                    // {
-                    //     value = ViewModel.ModifiedEnvVars[selectedVar];
-                    //     source = "Modified";
-                    // }
 
                     System.Windows.Clipboard.SetText(value);
                     StatusLabel.Text = $"Copied {selectedVar} ({source}) to clipboard";

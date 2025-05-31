@@ -82,12 +82,9 @@ namespace EnvVarViewer.ViewModels
         }
         public MainWindowViewModel MainWindowViewModel { get; set;}
 
-        // public BackupRestoreWindowViewModel(Dictionary<string, string> userVars, Dictionary<string, string> systemVars)
         public BackupRestoreWindowViewModel(ViewModels.MainWindowViewModel viewModel)
         {
             this.MainWindowViewModel = viewModel;
-            // UserEnvVars = viewModel.UserEnvVars;
-            // SystemEnvVars = viewModel.SystemEnvVars;
             _previewUserVars = new Dictionary<string, string>();
             _previewSystemVars = new Dictionary<string, string>();
         }
@@ -110,7 +107,6 @@ namespace EnvVarViewer.ViewModels
             var identity = WindowsIdentity.GetCurrent();
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
-            // return new Models.EnvironmentVariableModel.IsAdministrator();
         }
 
         private async Task ExecuteBackupAsync()

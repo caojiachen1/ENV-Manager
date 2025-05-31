@@ -184,7 +184,6 @@ namespace EnvVarViewer.Models
             {
                 // User cancelled the UAC prompt
             }
-            // Application.Current.Shutdown();
         }
     }
 }

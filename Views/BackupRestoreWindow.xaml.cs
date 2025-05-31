@@ -16,7 +16,6 @@ namespace EnvVarViewer
         private Dictionary<string, string> previewUserVars = new Dictionary<string, string>();
         private Dictionary<string, string> previewSystemVars = new Dictionary<string, string>();
 
-        // public BackupRestoreWindow(Dictionary<string, string> userVars, Dictionary<string, string> systemVars)
         /// <summary>
         /// Initializes a new instance of the BackupRestoreWindow
         /// </summary>
