@@ -29,11 +29,9 @@ namespace EnvVarViewer
             // Initialize ViewModel and set as DataContext
             ViewModel = new ViewModels.MainWindowViewModel();
             DataContext = ViewModel;
-            ViewModel.EnvVarListUpdated += (s, e) => 
-            {
-                EnvVarListBox.ItemsSource = null;
-                EnvVarListBox.ItemsSource = ViewModel.EnvVarList;
-            };
+            
+            // Use weak event pattern to prevent memory leaks
+            ViewModel.EnvVarListUpdated += OnEnvVarListUpdated;
             
             // Check if running as administrator, if not elevate privileges
             if (!ViewModel.IsAdministrator())
@@ -44,6 +42,16 @@ namespace EnvVarViewer
             
             SearchBox.Focus(); // Set focus to the search box after initialization
             EnvVarTreeView.MouseDoubleClick += EnvVarTreeView_MouseDoubleClick;
+        }
+
+        private void OnEnvVarListUpdated(object sender, EventArgs e)
+        {
+            // Batch UI updates to improve performance
+            Dispatcher.BeginInvoke(() =>
+            {
+                EnvVarListBox.ItemsSource = null;
+                EnvVarListBox.ItemsSource = ViewModel.EnvVarList;
+            }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -141,20 +149,38 @@ namespace EnvVarViewer
             }
         }
 
-        private void BackupRestoreButton_Click(object sender, RoutedEventArgs e)
+        private async Task<bool> EnsureAdminPrivilegesAsync()
         {
-            // Call Elevate only when the program is not running with administrator privileges
-            if (!ViewModel.IsAdministrator())
+            if (!await ViewModel.EnvVarModel.IsAdministratorAsync())
             {
-                ViewModel.Elevate();
-                return; // Return to avoid further execution if privilege elevation is required
+                await ViewModel.EnvVarModel.ElevateAsync();
+                return false;
             }
+            return true;
+        }
+
+        private async void BackupRestoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!await EnsureAdminPrivilegesAsync()) return;
             
             var backupRestoreWindow = new BackupRestoreWindow(ViewModel);
             backupRestoreWindow.ShowDialog();
             
-            // Refresh environment variables after window closes to show possible changes
-            RefreshButton_Click(sender, e);
+            await RefreshAsync();
+        }
+
+        private async void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!await EnsureAdminPrivilegesAsync()) return;
+            
+            var addWindow = new AddEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars);
+            addWindow.EnvVarAdded += async (s, ev) => await ViewModel.UpdateListBoxAsync();
+            addWindow.ShowDialog();
+        }
+
+        private async Task RefreshAsync()
+        {
+            await ViewModel.LoadEnvVarsAsync();
         }
 
         private void EnvVarListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -223,23 +249,6 @@ namespace EnvVarViewer
                 return "System";
             }
             return "Unknown";
-        }
-
-        private void AddButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Call Elevate only when the program is not running with administrator privileges
-            if (!ViewModel.IsAdministrator())
-            {
-                ViewModel.Elevate();
-                return; // Return to avoid further execution if privilege elevation is required
-            }
-            
-            var addWindow = new AddEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars);
-            addWindow.EnvVarAdded += (s, ev) =>
-            {
-                ViewModel.UpdateListBox();
-            };
-            addWindow.ShowDialog();
         }
 
         private void ModifyButton_Click(object sender, RoutedEventArgs e)

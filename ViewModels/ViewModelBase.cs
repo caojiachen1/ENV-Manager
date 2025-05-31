@@ -2,19 +2,21 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace EnvVarViewer.ViewModels
 {
     /// <summary>
     /// Abstract base class providing common functionality for all ViewModels
     /// </summary>
-    public abstract class ViewModelBase : INotifyPropertyChanged
+    public abstract class ViewModelBase : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
         private bool _isLoading;
         private string _loadingMessage;
         private CancellationTokenSource _cancellationTokenSource;
+        private bool _disposed;
 
         /// <summary>
         /// Indicates if a long-running operation is in progress
@@ -94,9 +96,19 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Dispose method to clean up resources
         /// </summary>
-        protected virtual void Dispose()
+        public void Dispose()
         {
-            CancelOperations();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                CancelOperations();
+                _disposed = true;
+            }
         }
     }
 }

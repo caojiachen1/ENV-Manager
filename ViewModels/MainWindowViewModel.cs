@@ -13,12 +13,6 @@ using System.Threading;
 
 namespace EnvVarViewer.ViewModels
 {
-    public enum SortOrder
-    {
-        Ascending,
-        Descending
-    }
-
     public class MainWindowViewModel : ViewModelBase
     {
         private readonly EnvironmentVariableModel _envVarModel;
@@ -132,23 +126,32 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public EnvironmentVariableModel EnvVarModel => _envVarModel;
 
+        private readonly SemaphoreSlim _loadingSemaphore = new SemaphoreSlim(1, 1);
+
         /// <summary>
         /// Loads environment variables from both user and system scope asynchronously
         /// </summary>
         public async Task LoadEnvVarsAsync()
         {
+            // Prevent concurrent loading operations
+            if (!await _loadingSemaphore.WaitAsync(100))
+            {
+                return; // Another load operation is already in progress
+            }
+
             try
             {
                 SetLoadingState(true, "Loading environment variables...");
+                CancellationTokenSource?.Cancel();
                 CancellationTokenSource = new CancellationTokenSource();
 
-                var userTask = _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.User, CancellationTokenSource.Token);
-                var systemTask = _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.Machine, CancellationTokenSource.Token);
-
-                var results = await Task.WhenAll(userTask, systemTask);
+                var (userVars, systemVars) = await Task.WhenAll(
+                    _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.User, CancellationTokenSource.Token),
+                    _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.Machine, CancellationTokenSource.Token)
+                ).ContinueWith(task => (task.Result[0], task.Result[1]), CancellationTokenSource.Token);
                 
-                _userEnvVars = results[0];
-                _systemEnvVars = results[1];
+                _userEnvVars = userVars;
+                _systemEnvVars = systemVars;
                 
                 await UpdateListBoxAsync();
             }
@@ -163,6 +166,7 @@ namespace EnvVarViewer.ViewModels
             finally
             {
                 SetLoadingState(false);
+                _loadingSemaphore.Release();
             }
         }
 
@@ -171,6 +175,9 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public async Task UpdateListBoxAsync()
         {
+            if (_userEnvVars == null || _systemEnvVars == null)
+                return;
+
             try
             {
                 SetLoadingState(true, "Updating environment variables list...");
@@ -179,29 +186,26 @@ namespace EnvVarViewer.ViewModels
                 {
                     CancellationTokenSource.Token.ThrowIfCancellationRequested();
                     
-                    // Update the filtered and sorted list of environment variables
-                    var query = _userEnvVars?.Keys.Union(_systemEnvVars?.Keys ?? Enumerable.Empty<string>()) ?? Enumerable.Empty<string>();
+                    // Use HashSet for better performance with large collections
+                    var allKeys = new HashSet<string>(_userEnvVars.Keys);
+                    allKeys.UnionWith(_systemEnvVars.Keys);
+
+                    IEnumerable<string> query = allKeys;
 
                     if (!string.IsNullOrEmpty(SearchText))
                     {
-                        query = query.Where(k => k.ToLower().Contains(SearchText.ToLower()));
+                        var searchLower = SearchText.ToLowerInvariant();
+                        query = query.Where(k => k.ToLowerInvariant().Contains(searchLower));
                     }
 
-                    query = CurrentSortOrder.Equals(SortOrder.Ascending)
-                        ? query.OrderBy(k => k)
-                        : query.OrderByDescending(k => k);
+                    query = CurrentSortOrder == SortOrder.Ascending
+                        ? query.OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+                        : query.OrderByDescending(k => k, StringComparer.OrdinalIgnoreCase);
 
                     return query.ToList();
                 }, CancellationTokenSource.Token);
 
-                // Update UI on main thread
                 EnvVarList = result;
-                
-                // Notify property changes for UI updates
-                OnPropertyChanged(nameof(UserEnvVars));
-                OnPropertyChanged(nameof(SystemEnvVars));
-                
-                // Notify main window to refresh the environment variables list
                 EnvVarListUpdated?.Invoke(this, EventArgs.Empty);
             }
             catch (OperationCanceledException)
@@ -414,6 +418,15 @@ namespace EnvVarViewer.ViewModels
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _loadingSemaphore?.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

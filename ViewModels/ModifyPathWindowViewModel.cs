@@ -66,11 +66,13 @@ namespace EnvVarViewer.ViewModels
             }
         }
 
-        public RelayCommand AddPathCommand { get; }
-        public RelayCommand RemovePathCommand { get; }
-        public ICommand SavePathCommand { get; }
+        public RelayCommand AddPathCommand { get; private set; }
+        public RelayCommand RemovePathCommand { get; private set; }
+        public ICommand SavePathCommand { get; private set; }
         public RelayCommand CopyPathCommand { get; private set; }
-        public RelayCommand BrowsePathCommand { get; }
+        public RelayCommand BrowsePathCommand { get; private set; }
+
+        private readonly string _pathSeparator = ";";
 
         /// <summary>
         /// Check if the save button can be pressed
@@ -78,7 +80,8 @@ namespace EnvVarViewer.ViewModels
         /// <returns>True if the path has been modified, false otherwise</returns>
         private bool CanSavePath()
         {
-            return !_pathEntries.SequenceEqual(_originalPathEntries);
+            return PathEntries.Count != _originalPathEntries.Count ||
+                   !PathEntries.SequenceEqual(_originalPathEntries, StringComparer.OrdinalIgnoreCase);
         }
 
         public event EventHandler PathModified;
@@ -86,13 +89,27 @@ namespace EnvVarViewer.ViewModels
         public ModifyPathWindowViewModel(string pathValue, bool isUserPath)
         {
             _isUserPath = isUserPath;
-            _pathEntries = new ObservableCollection<string>(pathValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+            
+            // Use StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries for .NET 5+
+            var paths = pathValue?.Split(new[] { _pathSeparator }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            _pathEntries = new ObservableCollection<string>(paths.Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)));
             _originalPathEntries = new ObservableCollection<string>(_pathEntries);
             
+            InitializeCommands();
+            
+            // Subscribe to collection changes for better save state management
+            _pathEntries.CollectionChanged += (s, e) => 
+            {
+                ((RelayCommand)SavePathCommand).NotifyCanExecuteChanged();
+            };
+        }
+
+        private void InitializeCommands()
+        {
             AddPathCommand = new RelayCommand(AddPath, CanAddPath);
             RemovePathCommand = new RelayCommand(RemovePath, CanDeletePath);
             SavePathCommand = new RelayCommand(SavePath, CanSavePath);
-            CopyPathCommand = new RelayCommand(CopySelectedPath, () => SelectedPath != null);
+            CopyPathCommand = new RelayCommand(CopySelectedPath, () => !string.IsNullOrEmpty(SelectedPath));
             BrowsePathCommand = new RelayCommand(BrowsePath);
         }
 
@@ -104,8 +121,11 @@ namespace EnvVarViewer.ViewModels
 
         private bool CanAddPath()
         {
-            return !string.IsNullOrEmpty(NewPathEntry?.Trim()) && 
-                   !PathEntries.Contains(NewPathEntry.Trim());
+            if (string.IsNullOrWhiteSpace(NewPathEntry)) return false;
+            
+            var trimmed = NewPathEntry.Trim();
+            return !string.IsNullOrEmpty(trimmed) && 
+                   !PathEntries.Any(p => string.Equals(p, trimmed, StringComparison.OrdinalIgnoreCase));
         }
 
         private void AddPath()
@@ -128,9 +148,28 @@ namespace EnvVarViewer.ViewModels
 
         private void SavePath()
         {
-            string newPathValue = string.Join(";", PathEntries);
-            SetEnvironmentVariable(newPathValue);
-            PathModified?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                // Remove empty entries and duplicates
+                var cleanedPaths = PathEntries
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .Select(p => p.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                string newPathValue = string.Join(_pathSeparator, cleanedPaths);
+                SetEnvironmentVariable(newPathValue);
+                
+                // Update original collection for future comparisons
+                _originalPathEntries = new ObservableCollection<string>(cleanedPaths);
+                
+                PathModified?.Invoke(this, EventArgs.Empty);
+                StatusMessage = "PATH updated successfully";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to update PATH: {ex.Message}";
+            }
         }
 
         private void CopySelectedPath()
