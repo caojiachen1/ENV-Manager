@@ -14,10 +14,11 @@ namespace EnvVarViewer
         /// <summary>
         /// Initializes a new instance for modifying existing environment variables
         /// </summary>
-        public ModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, string name, string value)
+        public ModifyEnvVarWindow(Dictionary<string, string> userEnvVars, Dictionary<string, string> systemEnvVars, string name, string value, bool isUserNode)
         {
             InitializeComponent();
-            _viewModel = new ModifyEnvVarViewModel(userEnvVars, systemEnvVars, name, value);
+            string scope = isUserNode ? "user" : "system";
+            _viewModel = new ModifyEnvVarViewModel(userEnvVars, systemEnvVars, name, value, scope);
             DataContext = _viewModel;
             _viewModel.CloseWindow += (s, e) => Close();
         }

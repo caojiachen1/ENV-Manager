@@ -85,22 +85,30 @@ namespace EnvVarViewer.ViewModels
             string scope = SelectedScopeIndex switch
             {
                 0 => "User",
-                1 => "Machine",
-                _ => "Process"
+                1 => "System",
+                _ => "User"
             };
 
-            if (_userEnvVars.ContainsKey(Name) || _systemEnvVars.ContainsKey(Name))
+            // Only check if variable with same name exists in current scope
+            bool variableExists = scope switch
             {
-                System.Windows.MessageBox.Show($"Environment variable '{Name}' already exists.");
+                "User" => _userEnvVars.ContainsKey(Name),
+                "System" => _systemEnvVars.ContainsKey(Name),
+                _ => false
+            };
+
+            if (variableExists)
+            {
+                System.Windows.MessageBox.Show($"Environment variable '{Name}' already exists in {scope} scope.");
                 return;
             }
 
             EnvironmentVariableTarget target = scope switch
             {
-                "Process" => EnvironmentVariableTarget.Process,
+                // "Process" => EnvironmentVariableTarget.Process,
                 "User" => EnvironmentVariableTarget.User,
-                "Machine" => EnvironmentVariableTarget.Machine,
-                _ => EnvironmentVariableTarget.Process
+                "System" => EnvironmentVariableTarget.Machine,
+                _ => EnvironmentVariableTarget.User
             };
 
             try

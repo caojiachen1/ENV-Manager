@@ -293,7 +293,7 @@ namespace EnvVarViewer
                     }
                     else
                     {
-                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value);
+                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value, isUserNode);
                         modifyWindow.EnvVarModified += (s, ev) =>
                         {
                             ViewModel.UpdateListBox();
@@ -344,7 +344,7 @@ namespace EnvVarViewer
                     }
                     else
                     {
-                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value);
+                        var modifyWindow = new ModifyEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars, selectedVar, value, true);
                         modifyWindow.EnvVarModified += (s, ev) =>
                         {
                             ViewModel.UpdateListBox();

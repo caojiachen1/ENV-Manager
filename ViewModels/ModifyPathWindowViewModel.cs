@@ -32,7 +32,6 @@ namespace EnvVarViewer.ViewModels
         public string NewPathEntry
         {
             get => _newPathEntry;
-            // set => SetProperty(ref _newPathEntry, value);
             set
             {
                 if (SetProperty(ref _newPathEntry, value))
@@ -45,7 +44,6 @@ namespace EnvVarViewer.ViewModels
         public string? SelectedPath
         {
             get => _selectedPath;
-            // set => SetProperty(ref _selectedPath, value);
             set
             {
                 if (SetProperty(ref _selectedPath, value))

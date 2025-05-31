@@ -59,7 +59,20 @@ namespace EnvVarViewer.ViewModels
         public int SelectedScopeIndex
         {
             get => _selectedScopeIndex;
-            set => SetProperty(ref _selectedScopeIndex, value);
+            set
+            {
+                if (SetProperty(ref _selectedScopeIndex, value)) {
+                    // Update the value based on the selected scope
+                    string varName = Name;
+                    if (value == 0 && _userEnvVars.ContainsKey(varName)) {
+                        Value = _userEnvVars[varName];
+                    } else if (value == 1 && _systemEnvVars.ContainsKey(varName)) {
+                        Value = _systemEnvVars[varName];
+                    } else {
+                        Value = "";
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -74,22 +87,20 @@ namespace EnvVarViewer.ViewModels
             Dictionary<string, string> userEnvVars,
             Dictionary<string, string> systemEnvVars,
             string name,
-            string value)
+            string value,
+            string scope)
         {
             _userEnvVars = userEnvVars;
             _systemEnvVars = systemEnvVars;
             _originalName = name;
             Name = name;
             Value = value;
-
-            if (userEnvVars.ContainsKey(name))
+            SelectedScopeIndex = scope switch
             {
-                SelectedScopeIndex = 0; // User
-            }
-            else if (systemEnvVars.ContainsKey(name))
-            {
-                SelectedScopeIndex = 1; // System
-            }
+                "user" => 0,
+                "system" => 1,
+                _ => userEnvVars.ContainsKey(name) ? 0 : 1
+            };
 
             SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
         }
@@ -104,16 +115,16 @@ namespace EnvVarViewer.ViewModels
             string scope = SelectedScopeIndex switch
             {
                 0 => "User",
-                1 => "Machine",
-                _ => "Process"
+                1 => "System",
+                _ => "User"
             };
 
             EnvironmentVariableTarget target = scope switch
             {
-                "Process" => EnvironmentVariableTarget.Process,
+                // "Process" => EnvironmentVariableTarget.Process,
                 "User" => EnvironmentVariableTarget.User,
-                "Machine" => EnvironmentVariableTarget.Machine,
-                _ => EnvironmentVariableTarget.Process
+                "System" => EnvironmentVariableTarget.Machine,
+                _ => EnvironmentVariableTarget.User
             };
 
             try

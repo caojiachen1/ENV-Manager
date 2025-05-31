@@ -37,7 +37,6 @@
         <!-- Dropdown selector for environment variable scope (Process/User/System) -->
         <ComboBox SelectedIndex="{Binding SelectedScopeIndex}" 
                   Grid.Row="3" Grid.Column="1" Margin="5,18,10,0">
-            <ComboBoxItem Content="Process"/>
             <ComboBoxItem Content="User"/>
             <ComboBoxItem Content="System"/>
         </ComboBox>
