@@ -16,48 +16,23 @@ namespace EnvVarViewer.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         private readonly EnvironmentVariableModel _envVarModel;
-        private Dictionary<string, string> _userEnvVars;
-        private Dictionary<string, string> _systemEnvVars;
-        private CancellationTokenSource _cancellationTokenSource;
-        private bool _isLoading;
-
-        public Dictionary<string, string> UserEnvVars => _userEnvVars;
-        public Dictionary<string, string> SystemEnvVars => _systemEnvVars;
+        private Dictionary<string, string>? _userEnvVars;
+        private Dictionary<string, string>? _systemEnvVars;
         
-        private SortOrder _currentSortOrder;
-        private string _searchText;
-        private string _statusText;
-        private string _selectedEnvVar;
-        private IEnumerable<string> _envVarList;
+        private SortOrder _currentSortOrder = SortOrder.Ascending;
+        private string? _searchText;
+        private string _statusText = "Ready";
+        private string? _selectedEnvVar;
+        private IEnumerable<string>? _envVarList;
+        private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public Dictionary<string, string> UserEnvVars => _userEnvVars ?? new Dictionary<string, string>();
+        public Dictionary<string, string> SystemEnvVars => _systemEnvVars ?? new Dictionary<string, string>();
         
         /// <summary>
         /// Event raised when the environment variables list is updated
         /// </summary>
-        public event EventHandler EnvVarListUpdated;
-
-        /// <summary>
-        /// Gets or sets the cancellation token source for async operations
-        /// </summary>
-        protected CancellationTokenSource CancellationTokenSource
-        {
-            get => _cancellationTokenSource;
-            set => _cancellationTokenSource = value;
-        }
-
-        /// <summary>
-        /// Gets or sets whether the view model is currently loading data
-        /// </summary>
-        public bool IsLoading
-        {
-            get => _isLoading;
-            private set
-            {
-                _isLoading = value;
-                OnPropertyChanged(nameof(IsLoading));
-            }
-        }
+        public event EventHandler? EnvVarListUpdated;
 
         /// <summary>
         /// Initializes a new instance of the MainWindowViewModel class
@@ -65,49 +40,37 @@ namespace EnvVarViewer.ViewModels
         public MainWindowViewModel()
         {
             _envVarModel = new EnvironmentVariableModel();
-            _currentSortOrder = SortOrder.Ascending;
             _ = LoadEnvVarsAsync(); // Fire and forget for initial load
         }
 
-        public IEnumerable<string> EnvVarList
+        public IEnumerable<string>? EnvVarList
         {
             get => _envVarList;
-            private set
-            {
-                _envVarList = value;
-                OnPropertyChanged(nameof(EnvVarList));
-            }
+            private set => SetProperty(ref _envVarList, value);
         }
 
-        public string SearchText
+        public string? SearchText
         {
             get => _searchText;
             set
             {
-                _searchText = value;
-                OnPropertyChanged(nameof(SearchText));
-                UpdateListBox();
+                if (SetProperty(ref _searchText, value))
+                {
+                    _ = UpdateListBoxAsync();
+                }
             }
         }
 
         public string StatusText
         {
             get => _statusText;
-            set
-            {
-                _statusText = value;
-                OnPropertyChanged(nameof(StatusText));
-            }
+            set => SetProperty(ref _statusText, value);
         }
 
-        public string SelectedEnvVar
+        public string? SelectedEnvVar
         {
             get => _selectedEnvVar;
-            set
-            {
-                _selectedEnvVar = value;
-                OnPropertyChanged(nameof(SelectedEnvVar));
-            }
+            set => SetProperty(ref _selectedEnvVar, value);
         }
 
         public SortOrder CurrentSortOrder
@@ -115,9 +78,10 @@ namespace EnvVarViewer.ViewModels
             get => _currentSortOrder;
             set
             {
-                _currentSortOrder = value;
-                OnPropertyChanged(nameof(CurrentSortOrder));
-                UpdateListBox();
+                if (SetProperty(ref _currentSortOrder, value))
+                {
+                    _ = UpdateListBoxAsync();
+                }
             }
         }
 
@@ -126,46 +90,38 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public EnvironmentVariableModel EnvVarModel => _envVarModel;
 
-        private readonly SemaphoreSlim _loadingSemaphore = new SemaphoreSlim(1, 1);
-
         /// <summary>
         /// Loads environment variables from both user and system scope asynchronously
         /// </summary>
         public async Task LoadEnvVarsAsync()
         {
-            // Prevent concurrent loading operations
             if (!await _loadingSemaphore.WaitAsync(100))
-            {
-                return; // Another load operation is already in progress
-            }
+                return;
 
             try
             {
-                SetLoadingState(true, "Loading environment variables...");
-                CancellationTokenSource?.Cancel();
-                CancellationTokenSource = new CancellationTokenSource();
-
-                var (userVars, systemVars) = await Task.WhenAll(
-                    _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.User, CancellationTokenSource.Token),
-                    _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.Machine, CancellationTokenSource.Token)
-                ).ContinueWith(task => (task.Result[0], task.Result[1]), CancellationTokenSource.Token);
-                
-                _userEnvVars = userVars;
-                _systemEnvVars = systemVars;
-                
-                await UpdateListBoxAsync();
-            }
-            catch (OperationCanceledException)
-            {
-                StatusText = "Loading cancelled";
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Error loading environment variables: {ex.Message}";
+                await ExecuteAsync(async cancellationToken =>
+                {
+                    var tasks = new[]
+                    {
+                        _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.User, cancellationToken),
+                        _envVarModel.LoadEnvVarsAsync(EnvironmentVariableTarget.Machine, cancellationToken)
+                    };
+                    
+                    var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+                    
+                    _userEnvVars = results[0];
+                    _systemEnvVars = results[1];
+                    
+                    await UpdateListBoxAsync().ConfigureAwait(false);
+                    
+                    // Update status on UI thread
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                        StatusText = $"Loaded {_userEnvVars.Count} user and {_systemEnvVars.Count} system variables");
+                }, "Loading environment variables...", "Failed to load environment variables");
             }
             finally
             {
-                SetLoadingState(false);
                 _loadingSemaphore.Release();
             }
         }
@@ -178,21 +134,16 @@ namespace EnvVarViewer.ViewModels
             if (_userEnvVars == null || _systemEnvVars == null)
                 return;
 
-            try
+            await ExecuteAsync(async cancellationToken =>
             {
-                SetLoadingState(true, "Updating environment variables list...");
-                
                 var result = await Task.Run(() =>
                 {
-                    CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                    
-                    // Use HashSet for better performance with large collections
                     var allKeys = new HashSet<string>(_userEnvVars.Keys);
                     allKeys.UnionWith(_systemEnvVars.Keys);
 
                     IEnumerable<string> query = allKeys;
 
-                    if (!string.IsNullOrEmpty(SearchText))
+                    if (!string.IsNullOrWhiteSpace(SearchText))
                     {
                         var searchLower = SearchText.ToLowerInvariant();
                         query = query.Where(k => k.ToLowerInvariant().Contains(searchLower));
@@ -203,101 +154,63 @@ namespace EnvVarViewer.ViewModels
                         : query.OrderByDescending(k => k, StringComparer.OrdinalIgnoreCase);
 
                     return query.ToList();
-                }, CancellationTokenSource.Token);
+                }, cancellationToken).ConfigureAwait(false);
 
-                EnvVarList = result;
-                EnvVarListUpdated?.Invoke(this, EventArgs.Empty);
-            }
-            catch (OperationCanceledException)
-            {
-                StatusText = "Update cancelled";
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Error updating list: {ex.Message}";
-            }
-            finally
-            {
-                SetLoadingState(false);
-            }
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    EnvVarList = result;
+                    EnvVarListUpdated?.Invoke(this, EventArgs.Empty);
+                });
+            }, errorPrefix: "Failed to update environment variables list");
         }
 
         /// <summary>
         /// Sets an environment variable asynchronously
         /// </summary>
-        /// <param name="name">The name of the environment variable</param>
-        /// <param name="value">The value of the environment variable</param>
-        /// <param name="target">The target scope (User or Machine)</param>
-        /// <returns>True if successful, false otherwise</returns>
         public async Task<bool> SetEnvVarAsync(string name, string value, EnvironmentVariableTarget target)
         {
+            if (!ValidateInput(name, "Variable name") || !ValidateInput(value, "Variable value"))
+                return false;
+
             try
             {
-                SetLoadingState(true, $"Setting environment variable '{name}'...");
-                
-                if (CancellationTokenSource == null)
-                    CancellationTokenSource = new CancellationTokenSource();
+                await ExecuteAsync(async cancellationToken =>
+                {
+                    await _envVarModel.SetEnvVarAsync(name, value, target, cancellationToken).ConfigureAwait(false);
+                    await LoadEnvVarsAsync().ConfigureAwait(false);
+                }, $"Setting environment variable '{name}'...", "Failed to set environment variable");
 
-                await _envVarModel.SetEnvVarAsync(name, value, target, CancellationTokenSource.Token);
-                
-                // Reload environment variables to reflect changes
-                await LoadEnvVarsAsync();
-                
                 StatusText = $"Environment variable '{name}' set successfully";
                 return true;
             }
-            catch (OperationCanceledException)
+            catch
             {
-                StatusText = "Operation cancelled";
                 return false;
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Error setting environment variable: {ex.Message}";
-                return false;
-            }
-            finally
-            {
-                SetLoadingState(false);
             }
         }
 
         /// <summary>
         /// Deletes an environment variable asynchronously
         /// </summary>
-        /// <param name="name">The name of the environment variable</param>
-        /// <param name="target">The target scope (User or Machine)</param>
-        /// <returns>True if successful, false otherwise</returns>
         public async Task<bool> DeleteEnvVarAsync(string name, EnvironmentVariableTarget target)
         {
+            if (!ValidateInput(name, "Variable name"))
+                return false;
+
             try
             {
-                SetLoadingState(true, $"Deleting environment variable '{name}'...");
-                
-                if (CancellationTokenSource == null)
-                    CancellationTokenSource = new CancellationTokenSource();
+                await ExecuteAsync(async cancellationToken =>
+                {
+                    await _envVarModel.DeleteEnvVarAsync(name, target, cancellationToken).ConfigureAwait(false);
+                    await LoadEnvVarsAsync().ConfigureAwait(false);
+                }, $"Deleting environment variable '{name}'...", "Failed to delete environment variable");
 
-                await _envVarModel.DeleteEnvVarAsync(name, target, CancellationTokenSource.Token);
-                
-                // Reload environment variables to reflect changes
-                await LoadEnvVarsAsync();
-                
                 StatusText = $"Environment variable '{name}' deleted successfully";
                 return true;
             }
-            catch (OperationCanceledException)
+            catch
             {
-                StatusText = "Operation cancelled";
                 return false;
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Error deleting environment variable: {ex.Message}";
-                return false;
-            }
-            finally
-            {
-                SetLoadingState(false);
             }
         }
 
@@ -361,26 +274,23 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public async Task ElevateAsync()
         {
-            try
+            await ExecuteAsync(async cancellationToken =>
             {
-                bool isAdmin = await _envVarModel.IsAdministratorAsync();
+                bool isAdmin = await _envVarModel.IsAdministratorAsync(cancellationToken).ConfigureAwait(false);
                 if (!isAdmin)
                 {
-                    bool success = await _envVarModel.ElevateAsync();
+                    bool success = await _envVarModel.ElevateAsync(cancellationToken).ConfigureAwait(false);
                     if (success)
                     {
-                        System.Windows.Application.Current.Shutdown();
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => System.Windows.Application.Current.Shutdown());
                     }
                     else
                     {
-                        StatusText = "Administrator privileges required to continue";
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                            StatusText = "Administrator privileges required to continue");
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Error during elevation: {ex.Message}";
-            }
+            }, "Elevating privileges...", "Failed to elevate privileges");
         }
 
         /// <summary>
@@ -413,11 +323,6 @@ namespace EnvVarViewer.ViewModels
                     }
                 }
             }
-        }
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         protected override void Dispose(bool disposing)

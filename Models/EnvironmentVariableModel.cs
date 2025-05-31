@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Security;
 
 namespace EnvVarViewer.Models
 {
@@ -16,20 +17,34 @@ namespace EnvVarViewer.Models
         /// <summary>
         /// Loads environment variables from the system asynchronously.
         /// </summary>
-        /// <param name="target">The environment variable target (User or Machine).</param>
-        /// <param name="cancellationToken">Cancellation token for the operation.</param>
-        /// <returns>A dictionary containing environment variables for the specified target.</returns>
         public async Task<Dictionary<string, string>> LoadEnvVarsAsync(EnvironmentVariableTarget target, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                
                 var envVars = new Dictionary<string, string>();
-                foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables(target))
+                
+                try
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    envVars.Add(entry.Key.ToString(), entry.Value.ToString());
+                    foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables(target))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        
+                        var key = entry.Key?.ToString();
+                        var value = entry.Value?.ToString();
+                        
+                        if (!string.IsNullOrEmpty(key))
+                        {
+                            envVars[key] = value ?? string.Empty;
+                        }
+                    }
                 }
+                catch (SecurityException ex)
+                {
+                    throw new UnauthorizedAccessException($"Access denied when reading {target} environment variables. Administrator privileges may be required.", ex);
+                }
+                
                 return envVars;
             }, cancellationToken);
         }
@@ -37,82 +52,91 @@ namespace EnvVarViewer.Models
         /// <summary>
         /// Sets an environment variable asynchronously.
         /// </summary>
-        /// <param name="name">The name of the environment variable.</param>
-        /// <param name="value">The value of the environment variable.</param>
-        /// <param name="target">The environment variable target (User or Machine).</param>
-        /// <param name="cancellationToken">Cancellation token for the operation.</param>
         public async Task SetEnvVarAsync(string name, string value, EnvironmentVariableTarget target, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("Environment variable name cannot be null or empty", nameof(name));
+            
+            if (name.Contains('=') || name.Contains('\0'))
+                throw new ArgumentException("Environment variable name contains invalid characters", nameof(name));
+
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Environment.SetEnvironmentVariable(name, value, target);
+                
+                try
+                {
+                    Environment.SetEnvironmentVariable(name, value, target);
+                }
+                catch (SecurityException ex)
+                {
+                    throw new UnauthorizedAccessException($"Access denied when setting {target} environment variable '{name}'. Administrator privileges may be required.", ex);
+                }
             }, cancellationToken);
         }
 
         /// <summary>
         /// Deletes an environment variable asynchronously.
         /// </summary>
-        /// <param name="name">The name of the environment variable.</param>
-        /// <param name="target">The environment variable target (User or Machine).</param>
-        /// <param name="cancellationToken">Cancellation token for the operation.</param>
         public async Task DeleteEnvVarAsync(string name, EnvironmentVariableTarget target, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("Environment variable name cannot be null or empty", nameof(name));
+
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Environment.SetEnvironmentVariable(name, null, target);
+                
+                try
+                {
+                    Environment.SetEnvironmentVariable(name, null, target);
+                }
+                catch (SecurityException ex)
+                {
+                    throw new UnauthorizedAccessException($"Access denied when deleting {target} environment variable '{name}'. Administrator privileges may be required.", ex);
+                }
             }, cancellationToken);
         }
 
         /// <summary>
         /// Checks if the application is running with administrator privileges asynchronously.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token for the operation.</param>
-        /// <returns>True if running as administrator, false otherwise.</returns>
         public async Task<bool> IsAdministratorAsync(CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                try
-                {
-                    WindowsIdentity user = WindowsIdentity.GetCurrent();
-                    WindowsPrincipal principal = new WindowsPrincipal(user);
-                    return principal.IsInRole(WindowsBuiltInRole.Administrator);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return false;
-                }
+                return IsAdministrator();
             }, cancellationToken);
         }
 
         /// <summary>
         /// Elevates the application process to run with administrator privileges asynchronously.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token for the operation.</param>
-        /// <returns>True if elevation was successful, false if cancelled by user.</returns>
         public async Task<bool> ElevateAsync(CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 
-                ProcessStartInfo startInfo = new ProcessStartInfo
+                var currentProcess = Process.GetCurrentProcess();
+                var executablePath = currentProcess.MainModule?.FileName ?? 
+                                   System.Reflection.Assembly.GetExecutingAssembly().Location;
+
+                ProcessStartInfo startInfo = new()
                 {
                     UseShellExecute = true,
                     WorkingDirectory = Environment.CurrentDirectory,
-                    FileName = System.Reflection.Assembly.GetExecutingAssembly().Location,
+                    FileName = executablePath,
                     Verb = "runas"
                 };
 
                 try
                 {
-                    Process.Start(startInfo);
-                    return true;
+                    using var process = Process.Start(startInfo);
+                    return process != null;
                 }
-                catch (System.ComponentModel.Win32Exception)
+                catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
                 {
                     // User cancelled the UAC prompt
                     return false;

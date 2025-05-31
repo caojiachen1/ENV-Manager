@@ -11,28 +11,28 @@ namespace EnvVarViewer.ViewModels
     /// </summary>
     public class ModifyEnvVarViewModel : ViewModelBase
     {
-        private Dictionary<string, string> _userEnvVars;
-        private Dictionary<string, string> _systemEnvVars;
-        private string _originalName;
-        private string _name;
-        private string _value;
+        private readonly Dictionary<string, string> _userEnvVars;
+        private readonly Dictionary<string, string> _systemEnvVars;
+        private readonly string _originalName;
+        private string? _name;
+        private string? _value;
         private int _selectedScopeIndex;
 
-        public event EventHandler EnvVarModified;
+        public event EventHandler? EnvVarModified;
+        public event EventHandler? CloseWindow;
 
         /// <summary>
         /// Environment variable name
         /// </summary>
-        public string Name
+        public string? Name
         {
             get => _name;
             set
             {
-                if (string.IsNullOrEmpty(value)) return;
-                if (SetProperty(ref _name, value)) {
-                    if (SaveCommand != null) {
-                        SaveCommand.NotifyCanExecuteChanged();
-                    }
+                if (SetProperty(ref _name, value))
+                {
+                    SaveCommand?.NotifyCanExecuteChanged();
+                    ErrorMessage = null; // Clear errors when name changes
                 }
             }
         }
@@ -40,16 +40,15 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Environment variable value
         /// </summary>
-        public string Value
+        public string? Value
         {
             get => _value;
             set
             {
-                if (string.IsNullOrEmpty(value)) return;
-                if (SetProperty(ref _value, value)) {
-                    if (SaveCommand != null) {
-                        SaveCommand.NotifyCanExecuteChanged();
-                    }
+                if (SetProperty(ref _value, value))
+                {
+                    SaveCommand?.NotifyCanExecuteChanged();
+                    ErrorMessage = null; // Clear errors when value changes
                 }
             }
         }
@@ -62,16 +61,9 @@ namespace EnvVarViewer.ViewModels
             get => _selectedScopeIndex;
             set
             {
-                if (SetProperty(ref _selectedScopeIndex, value)) {
-                    // Update the value based on the selected scope
-                    string varName = Name;
-                    if (value == 0 && _userEnvVars.ContainsKey(varName)) {
-                        Value = _userEnvVars[varName];
-                    } else if (value == 1 && _systemEnvVars.ContainsKey(varName)) {
-                        Value = _systemEnvVars[varName];
-                    } else {
-                        Value = "";
-                    }
+                if (SetProperty(ref _selectedScopeIndex, value))
+                {
+                    UpdateValueFromScope();
                 }
             }
         }
@@ -81,9 +73,6 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public AsyncRelayCommand SaveCommand { get; }
 
-        /// <summary>
-        /// Initializes a new instance for modifying existing environment variables
-        /// </summary>
         public ModifyEnvVarViewModel(
             Dictionary<string, string> userEnvVars,
             Dictionary<string, string> systemEnvVars,
@@ -91,12 +80,13 @@ namespace EnvVarViewer.ViewModels
             string value,
             string scope)
         {
-            _userEnvVars = userEnvVars;
-            _systemEnvVars = systemEnvVars;
-            _originalName = name;
+            _userEnvVars = userEnvVars ?? throw new ArgumentNullException(nameof(userEnvVars));
+            _systemEnvVars = systemEnvVars ?? throw new ArgumentNullException(nameof(systemEnvVars));
+            _originalName = name ?? throw new ArgumentNullException(nameof(name));
+            
             Name = name;
             Value = value;
-            SelectedScopeIndex = scope switch
+            SelectedScopeIndex = scope?.ToLower() switch
             {
                 "user" => 0,
                 "system" => 1,
@@ -106,28 +96,37 @@ namespace EnvVarViewer.ViewModels
             SaveCommand = new AsyncRelayCommand(ExecuteSaveAsync, CanExecuteSave);
         }
 
+        private void UpdateValueFromScope()
+        {
+            if (string.IsNullOrEmpty(Name)) return;
+
+            string? scopeValue = SelectedScopeIndex switch
+            {
+                0 when _userEnvVars.TryGetValue(Name, out var userVal) => userVal,
+                1 when _systemEnvVars.TryGetValue(Name, out var systemVal) => systemVal,
+                _ => string.Empty
+            };
+            
+            if (scopeValue != null)
+                Value = scopeValue;
+        }
+
         private bool CanExecuteSave()
         {
-            return !string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Value);
+            return !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Value);
         }
 
         private async Task ExecuteSaveAsync()
         {
-            try
-            {
-                SetLoadingState(true, "Saving environment variable...");
-                
-                string scope = SelectedScopeIndex switch
-                {
-                    0 => "User",
-                    1 => "System",
-                    _ => "User"
-                };
+            if (!ValidateInput(Name, "Variable name") || !ValidateInput(Value, "Variable value"))
+                return;
 
-                EnvironmentVariableTarget target = scope switch
+            await ExecuteAsync(async cancellationToken =>
+            {
+                var target = SelectedScopeIndex switch
                 {
-                    "User" => EnvironmentVariableTarget.User,
-                    "System" => EnvironmentVariableTarget.Machine,
+                    0 => EnvironmentVariableTarget.User,
+                    1 => EnvironmentVariableTarget.Machine,
                     _ => EnvironmentVariableTarget.User
                 };
 
@@ -136,54 +135,27 @@ namespace EnvVarViewer.ViewModels
                 // Delete old variable if name changed
                 if (_originalName != Name)
                 {
-                    await model.DeleteEnvVarAsync(_originalName, target, CancellationTokenSource.Token);
+                    await model.DeleteEnvVarAsync(_originalName, target, cancellationToken).ConfigureAwait(false);
                 }
                 
                 // Set new variable
-                await model.SetEnvVarAsync(Name, Value, target, CancellationTokenSource.Token);
+                await model.SetEnvVarAsync(Name!, Value!, target, cancellationToken).ConfigureAwait(false);
                 
                 // Update local dictionaries
-                if (target == EnvironmentVariableTarget.User)
+                var targetDict = target == EnvironmentVariableTarget.User ? _userEnvVars : _systemEnvVars;
+                targetDict[Name!] = Value!;
+                
+                if (_originalName != Name && targetDict.ContainsKey(_originalName))
                 {
-                    _userEnvVars[Name] = Value;
-                    if (_originalName != Name && _userEnvVars.ContainsKey(_originalName))
-                    {
-                        _userEnvVars.Remove(_originalName);
-                    }
-                }
-                else if (target == EnvironmentVariableTarget.Machine)
-                {
-                    _systemEnvVars[Name] = Value;
-                    if (_originalName != Name && _systemEnvVars.ContainsKey(_originalName))
-                    {
-                        _systemEnvVars.Remove(_originalName);
-                    }
+                    targetDict.Remove(_originalName);
                 }
                 
-                EnvVarModified?.Invoke(this, EventArgs.Empty);
-                CloseWindow?.Invoke(this, EventArgs.Empty);
-            }
-            catch (OperationCanceledException)
-            {
-                // Operation was cancelled
-            }
-            catch (System.Security.SecurityException)
-            {
-                System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
-            }
-            finally
-            {
-                SetLoadingState(false);
-            }
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    EnvVarModified?.Invoke(this, EventArgs.Empty);
+                    CloseWindow?.Invoke(this, EventArgs.Empty);
+                });
+            }, "Saving environment variable...", "Failed to save environment variable");
         }
-
-        /// <summary>
-        /// Window close event
-        /// </summary>
-        public event EventHandler CloseWindow;
     }
 }

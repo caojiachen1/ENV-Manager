@@ -11,18 +11,19 @@ namespace EnvVarViewer.ViewModels
     /// </summary>
     public class AddEnvVarViewModel : ViewModelBase
     {
-        private Dictionary<string, string> _userEnvVars;
-        private Dictionary<string, string> _systemEnvVars;
-        private string _name;
-        private string _value;
+        private readonly Dictionary<string, string> _userEnvVars;
+        private readonly Dictionary<string, string> _systemEnvVars;
+        private string? _name;
+        private string? _value;
         private int _selectedScopeIndex;
 
-        public event EventHandler EnvVarAdded;
+        public event EventHandler? EnvVarAdded;
+        public event EventHandler? CloseWindow;
 
         /// <summary>
         /// Environment variable name
         /// </summary>
-        public string Name
+        public string? Name
         {
             get => _name;
             set
@@ -30,6 +31,7 @@ namespace EnvVarViewer.ViewModels
                 if (SetProperty(ref _name, value))
                 {
                     SaveCommand.NotifyCanExecuteChanged();
+                    ErrorMessage = null; // Clear errors when name changes
                 }
             }
         }
@@ -37,7 +39,7 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Environment variable value
         /// </summary>
-        public string Value
+        public string? Value
         {
             get => _value;
             set
@@ -45,6 +47,7 @@ namespace EnvVarViewer.ViewModels
                 if (SetProperty(ref _value, value))
                 {
                     SaveCommand.NotifyCanExecuteChanged();
+                    ErrorMessage = null; // Clear errors when value changes
                 }
             }
         }
@@ -63,94 +66,62 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         public AsyncRelayCommand SaveCommand { get; }
 
-        /// <summary>
-        /// Initializes a new instance for adding environment variables
-        /// </summary>
         public AddEnvVarViewModel(
             Dictionary<string, string> userEnvVars,
             Dictionary<string, string> systemEnvVars)
         {
-            _userEnvVars = userEnvVars;
-            _systemEnvVars = systemEnvVars;
+            _userEnvVars = userEnvVars ?? throw new ArgumentNullException(nameof(userEnvVars));
+            _systemEnvVars = systemEnvVars ?? throw new ArgumentNullException(nameof(systemEnvVars));
 
             SaveCommand = new AsyncRelayCommand(ExecuteSaveAsync, CanExecuteSave);
         }
 
         private bool CanExecuteSave()
         {
-            return !string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Value);
+            return !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Value);
         }
 
         private async Task ExecuteSaveAsync()
         {
-            try
+            if (!ValidateInput(Name, "Variable name") || !ValidateInput(Value, "Variable value"))
+                return;
+
+            // Check for invalid characters in environment variable names
+            if (Name!.Contains('=') || Name.Contains('\0'))
             {
-                SetLoadingState(true, "Adding environment variable...");
-                
-                string scope = SelectedScopeIndex switch
-                {
-                    0 => "User",
-                    1 => "System",
-                    _ => "User"
-                };
+                SetErrorState("Environment variable name contains invalid characters");
+                return;
+            }
 
-                // Only check if variable with same name exists in current scope
-                bool variableExists = scope switch
+            await ExecuteAsync(async cancellationToken =>
+            {
+                var target = SelectedScopeIndex switch
                 {
-                    "User" => _userEnvVars.ContainsKey(Name),
-                    "System" => _systemEnvVars.ContainsKey(Name),
-                    _ => false
-                };
-
-                if (variableExists)
-                {
-                    System.Windows.MessageBox.Show($"Environment variable '{Name}' already exists in {scope} scope.");
-                    return;
-                }
-
-                EnvironmentVariableTarget target = scope switch
-                {
-                    "User" => EnvironmentVariableTarget.User,
-                    "System" => EnvironmentVariableTarget.Machine,
+                    0 => EnvironmentVariableTarget.User,
+                    1 => EnvironmentVariableTarget.Machine,
                     _ => EnvironmentVariableTarget.User
                 };
 
-                var model = new Models.EnvironmentVariableModel();
-                await model.SetEnvVarAsync(Name, Value, target, CancellationTokenSource.Token);
-                
-                if (target == EnvironmentVariableTarget.User)
+                // Check if variable already exists in current scope
+                var targetDict = target == EnvironmentVariableTarget.User ? _userEnvVars : _systemEnvVars;
+                if (targetDict.ContainsKey(Name!))
                 {
-                    _userEnvVars[Name] = Value;
+                    var scopeName = target == EnvironmentVariableTarget.User ? "User" : "System";
+                    throw new InvalidOperationException($"Environment variable '{Name}' already exists in {scopeName} scope");
                 }
-                else if (target == EnvironmentVariableTarget.Machine)
-                {
-                    _systemEnvVars[Name] = Value;
-                }
-                
-                EnvVarAdded?.Invoke(this, EventArgs.Empty);
-                CloseWindow?.Invoke(this, EventArgs.Empty);
-            }
-            catch (OperationCanceledException)
-            {
-                // Operation was cancelled
-            }
-            catch (System.Security.SecurityException)
-            {
-                System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
-            }
-            finally
-            {
-                SetLoadingState(false);
-            }
-        }
 
-        /// <summary>
-        /// Window close event
-        /// </summary>
-        public event EventHandler CloseWindow;
+                var model = new Models.EnvironmentVariableModel();
+                await model.SetEnvVarAsync(Name!, Value!, target, cancellationToken).ConfigureAwait(false);
+                
+                // Update local dictionary
+                targetDict[Name!] = Value!;
+                
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    EnvVarAdded?.Invoke(this, EventArgs.Empty);
+                    CloseWindow?.Invoke(this, EventArgs.Empty);
+                });
+            }, "Adding environment variable...", "Failed to add environment variable");
+        }
     }
 }
