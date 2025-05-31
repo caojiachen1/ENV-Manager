@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 
 namespace EnvVarViewer.ViewModels
 {
@@ -60,7 +61,7 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Save command
         /// </summary>
-        public RelayCommand SaveCommand { get; }
+        public AsyncRelayCommand SaveCommand { get; }
 
         /// <summary>
         /// Initializes a new instance for adding environment variables
@@ -72,7 +73,7 @@ namespace EnvVarViewer.ViewModels
             _userEnvVars = userEnvVars;
             _systemEnvVars = systemEnvVars;
 
-            SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
+            SaveCommand = new AsyncRelayCommand(ExecuteSaveAsync, CanExecuteSave);
         }
 
         private bool CanExecuteSave()
@@ -80,40 +81,43 @@ namespace EnvVarViewer.ViewModels
             return !string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Value);
         }
 
-        private void ExecuteSave()
+        private async Task ExecuteSaveAsync()
         {
-            string scope = SelectedScopeIndex switch
-            {
-                0 => "User",
-                1 => "System",
-                _ => "User"
-            };
-
-            // Only check if variable with same name exists in current scope
-            bool variableExists = scope switch
-            {
-                "User" => _userEnvVars.ContainsKey(Name),
-                "System" => _systemEnvVars.ContainsKey(Name),
-                _ => false
-            };
-
-            if (variableExists)
-            {
-                System.Windows.MessageBox.Show($"Environment variable '{Name}' already exists in {scope} scope.");
-                return;
-            }
-
-            EnvironmentVariableTarget target = scope switch
-            {
-                // "Process" => EnvironmentVariableTarget.Process,
-                "User" => EnvironmentVariableTarget.User,
-                "System" => EnvironmentVariableTarget.Machine,
-                _ => EnvironmentVariableTarget.User
-            };
-
             try
             {
-                Environment.SetEnvironmentVariable(Name, Value, target);
+                SetLoadingState(true, "Adding environment variable...");
+                
+                string scope = SelectedScopeIndex switch
+                {
+                    0 => "User",
+                    1 => "System",
+                    _ => "User"
+                };
+
+                // Only check if variable with same name exists in current scope
+                bool variableExists = scope switch
+                {
+                    "User" => _userEnvVars.ContainsKey(Name),
+                    "System" => _systemEnvVars.ContainsKey(Name),
+                    _ => false
+                };
+
+                if (variableExists)
+                {
+                    System.Windows.MessageBox.Show($"Environment variable '{Name}' already exists in {scope} scope.");
+                    return;
+                }
+
+                EnvironmentVariableTarget target = scope switch
+                {
+                    "User" => EnvironmentVariableTarget.User,
+                    "System" => EnvironmentVariableTarget.Machine,
+                    _ => EnvironmentVariableTarget.User
+                };
+
+                var model = new Models.EnvironmentVariableModel();
+                await model.SetEnvVarAsync(Name, Value, target, CancellationTokenSource.Token);
+                
                 if (target == EnvironmentVariableTarget.User)
                 {
                     _userEnvVars[Name] = Value;
@@ -122,9 +126,13 @@ namespace EnvVarViewer.ViewModels
                 {
                     _systemEnvVars[Name] = Value;
                 }
+                
                 EnvVarAdded?.Invoke(this, EventArgs.Empty);
-
                 CloseWindow?.Invoke(this, EventArgs.Empty);
+            }
+            catch (OperationCanceledException)
+            {
+                // Operation was cancelled
             }
             catch (System.Security.SecurityException)
             {
@@ -133,6 +141,10 @@ namespace EnvVarViewer.ViewModels
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
+            }
+            finally
+            {
+                SetLoadingState(false);
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 
 namespace EnvVarViewer.ViewModels
 {
@@ -78,7 +79,7 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Save command
         /// </summary>
-        public RelayCommand SaveCommand { get; }
+        public AsyncRelayCommand SaveCommand { get; }
 
         /// <summary>
         /// Initializes a new instance for modifying existing environment variables
@@ -102,7 +103,7 @@ namespace EnvVarViewer.ViewModels
                 _ => userEnvVars.ContainsKey(name) ? 0 : 1
             };
 
-            SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
+            SaveCommand = new AsyncRelayCommand(ExecuteSaveAsync, CanExecuteSave);
         }
 
         private bool CanExecuteSave()
@@ -110,28 +111,38 @@ namespace EnvVarViewer.ViewModels
             return !string.IsNullOrEmpty(Name) && !string.IsNullOrEmpty(Value);
         }
 
-        private void ExecuteSave()
+        private async Task ExecuteSaveAsync()
         {
-            string scope = SelectedScopeIndex switch
-            {
-                0 => "User",
-                1 => "System",
-                _ => "User"
-            };
-
-            EnvironmentVariableTarget target = scope switch
-            {
-                // "Process" => EnvironmentVariableTarget.Process,
-                "User" => EnvironmentVariableTarget.User,
-                "System" => EnvironmentVariableTarget.Machine,
-                _ => EnvironmentVariableTarget.User
-            };
-
             try
             {
-                Environment.SetEnvironmentVariable(_originalName, null, target);
-                Environment.SetEnvironmentVariable(Name, Value, target);
+                SetLoadingState(true, "Saving environment variable...");
                 
+                string scope = SelectedScopeIndex switch
+                {
+                    0 => "User",
+                    1 => "System",
+                    _ => "User"
+                };
+
+                EnvironmentVariableTarget target = scope switch
+                {
+                    "User" => EnvironmentVariableTarget.User,
+                    "System" => EnvironmentVariableTarget.Machine,
+                    _ => EnvironmentVariableTarget.User
+                };
+
+                var model = new Models.EnvironmentVariableModel();
+                
+                // Delete old variable if name changed
+                if (_originalName != Name)
+                {
+                    await model.DeleteEnvVarAsync(_originalName, target, CancellationTokenSource.Token);
+                }
+                
+                // Set new variable
+                await model.SetEnvVarAsync(Name, Value, target, CancellationTokenSource.Token);
+                
+                // Update local dictionaries
                 if (target == EnvironmentVariableTarget.User)
                 {
                     _userEnvVars[Name] = Value;
@@ -152,6 +163,10 @@ namespace EnvVarViewer.ViewModels
                 EnvVarModified?.Invoke(this, EventArgs.Empty);
                 CloseWindow?.Invoke(this, EventArgs.Empty);
             }
+            catch (OperationCanceledException)
+            {
+                // Operation was cancelled
+            }
             catch (System.Security.SecurityException)
             {
                 System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to modify environment variables at this scope.");
@@ -159,6 +174,10 @@ namespace EnvVarViewer.ViewModels
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
+            }
+            finally
+            {
+                SetLoadingState(false);
             }
         }
 

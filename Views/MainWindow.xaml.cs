@@ -10,25 +10,11 @@ using System.Windows.Input;
 using Wpf.Ui.Appearance;
 using System.Security.AccessControl;
 using System.Collections.Generic;
-using System.ComponentModel; // Added for INotifyPropertyChanged if needed for future binding
-//using Wpf.Ui.Controls;
+using System.ComponentModel;
+using EnvVarViewer.ViewModels;
 
 namespace EnvVarViewer
 {
-    public enum SortOrder
-    {
-        Ascending,
-        Descending
-    }
-
-    //public enum Language
-    //{
-    //    Chinese,
-    //    English
-    //}
-
-    //public Language Language {  get; set; }
-
     public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         private List<Window> _windows = new List<Window>();
@@ -110,41 +96,48 @@ namespace EnvVarViewer
 
         private void SortOrderButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.CurrentSortOrder = ViewModel.CurrentSortOrder == SortOrder.Ascending ? 
-                SortOrder.Descending : SortOrder.Ascending;
-            SortOrderButton.Content = ViewModel.CurrentSortOrder == SortOrder.Ascending ? "↑" : "↓";
+            ViewModel.CurrentSortOrder = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.ViewModels.SortOrder.Ascending) ? 
+                EnvVarViewer.ViewModels.SortOrder.Descending : EnvVarViewer.ViewModels.SortOrder.Ascending;
+            SortOrderButton.Content = ViewModel.CurrentSortOrder.Equals(EnvVarViewer.ViewModels.SortOrder.Ascending) ? "↑" : "↓";
         }
 
         /// <summary>
         /// Refreshes the environment variables list and maintains selection
         /// </summary>
-        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        private async void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-            // Store currently selected variable before refresh
-            string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
-
-            ViewModel.LoadEnvVars(); // This calls UpdateListBox(), which re-populates EnvVarListBox.ItemsSource
-
-            SearchBox.Text = ""; // Clear search box
-            StatusLabel.Text = "";
-            
-            // Clear the TreeView display first. If no item is re-selected, it remains empty.
-            var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
-            var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
-            userItem.Items.Clear();
-            systemItem.Items.Clear();
-
-            if (!string.IsNullOrEmpty(previouslySelectedVarKey))
+            try
             {
-                // EnvVarListBox.ItemsSource is IEnumerable<string> from UpdateListBox()
-                if (EnvVarListBox.ItemsSource is System.Collections.Generic.IEnumerable<string> items && items.Contains(previouslySelectedVarKey))
+                // Store currently selected variable before refresh
+                string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
+
+                await ViewModel.LoadEnvVarsAsync(); // Use async version
+
+                SearchBox.Text = ""; // Clear search box
+                StatusLabel.Text = "";
+                
+                // Clear the TreeView display first. If no item is re-selected, it remains empty.
+                var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
+                var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
+                userItem.Items.Clear();
+                systemItem.Items.Clear();
+
+                if (!string.IsNullOrEmpty(previouslySelectedVarKey))
                 {
-                    EnvVarListBox.SelectedItem = previouslySelectedVarKey;
-                    // Setting SelectedItem will trigger EnvVarListBox_SelectionChanged,
-                    // which will update the UserEnvList and SystemEnvList in the TreeView with new values.
+                    // EnvVarListBox.ItemsSource is IEnumerable<string> from UpdateListBox()
+                    if (EnvVarListBox.ItemsSource is System.Collections.Generic.IEnumerable<string> items && items.Contains(previouslySelectedVarKey))
+                    {
+                        EnvVarListBox.SelectedItem = previouslySelectedVarKey;
+                        // Setting SelectedItem will trigger EnvVarListBox_SelectionChanged,
+                        // which will update the UserEnvList and SystemEnvList in the TreeView with new values.
+                    }
+                    // If the previously selected item no longer exists (e.g., variable deleted),
+                    // or if ItemsSource is not what we expect, the TreeView remains empty as cleared above.
                 }
-                // If the previously selected item no longer exists (e.g., variable deleted),
-                // or if ItemsSource is not what we expect, the TreeView remains empty as cleared above.
+            }
+            catch (Exception ex)
+            {
+                StatusLabel.Text = $"Error refreshing: {ex.Message}";
             }
         }
 
@@ -399,48 +392,64 @@ namespace EnvVarViewer
             return null;
         }
 
-        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        private async void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            // Call Elevate only when the program is not running with administrator privileges
-            if (!ViewModel.IsAdministrator())
+            try
             {
-                ViewModel.Elevate();
-                return; // Return to avoid further execution if privilege elevation is required
-            }
-            
-            if (EnvVarListBox.SelectedItem != null)
-            {
-                string selectedVar = EnvVarListBox.SelectedItem.ToString();
-                if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
+                // Check administrator privileges asynchronously
+                if (!await ViewModel.EnvVarModel.IsAdministratorAsync())
                 {
-                    var result = new ConfirmDeleteWindow(selectedVar).ShowDialog();
-                    //var result = MessageBox.Show($"Are you sure you want to delete the environment variable '{selectedVar}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                    if (result == true)
+                    await ViewModel.EnvVarModel.ElevateAsync();
+                    return; // Return to avoid further execution if privilege elevation is required
+                }
+                
+                if (EnvVarListBox.SelectedItem != null)
+                {
+                    string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                    if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
                     {
-                        try
+                        var result = new ConfirmDeleteWindow(selectedVar).ShowDialog();
+                        if (result == true)
                         {
-                            Environment.SetEnvironmentVariable(selectedVar, null, EnvironmentVariableTarget.User);
-                            Environment.SetEnvironmentVariable(selectedVar, null, EnvironmentVariableTarget.Machine);
-                            ViewModel.UpdateListBox();
-                            StatusLabel.Text = $"Deleted {selectedVar}";
-                        }
-                        catch (System.Security.SecurityException)
-                        {
-                            System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to delete environment variables at this scope.");
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
+                            try
+                            {
+                                bool success = await ViewModel.DeleteEnvVarAsync(selectedVar, EnvironmentVariableTarget.User);
+                                if (success)
+                                {
+                                    success = await ViewModel.DeleteEnvVarAsync(selectedVar, EnvironmentVariableTarget.Machine);
+                                }
+                                
+                                if (success)
+                                {
+                                    StatusLabel.Text = $"Deleted {selectedVar}";
+                                }
+                                else
+                                {
+                                    StatusLabel.Text = $"Failed to delete {selectedVar}";
+                                }
+                            }
+                            catch (System.Security.SecurityException)
+                            {
+                                System.Windows.MessageBox.Show("Permission denied. You do not have sufficient privileges to delete environment variables at this scope.");
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Windows.MessageBox.Show($"An error occurred: {ex.Message}");
+                            }
                         }
                     }
-                }
-                else
-                {
-                    StatusLabel.Text = $"Environment variable {selectedVar} not found";
+                    else
+                    {
+                        StatusLabel.Text = $"Environment variable {selectedVar} not found";
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                StatusLabel.Text = $"Error: {ex.Message}";
+            }
         }
-        
+
         private void PinToTop_Click(object sender, RoutedEventArgs e)
         {
             if (EnvVarListBox.SelectedItem != null)
