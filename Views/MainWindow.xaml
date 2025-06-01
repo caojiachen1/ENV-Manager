@@ -9,7 +9,7 @@
     xmlns:local="clr-namespace:WpfApp1"
     xmlns:viewmodels="clr-namespace:EnvVarViewer.ViewModels"
     Title="Environment Variable Manager" 
-    Height="450" Width="800"
+    Height="450" Width="850"
     d:DesignHeight="450"
     d:DesignWidth="800"
     ui:Design.Background="#FF202020"
@@ -59,10 +59,10 @@
             <ui:Button x:Name="SortOrderButton" Content="↑" Click="SortOrderButton_Click" Grid.Column="2" VerticalAlignment="Center" Margin="5,0,10,0" Width="40" Height="35"/>
 
             <StackPanel Grid.Column="3" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <ui:Button Content="Refresh" Click="RefreshButton_Click" Width="70" Height="35"/>
-                <ui:Button Content="Backup/Restore" Click="BackupRestoreButton_Click" Width="120" Height="35" Margin="10,0"/>
-                <ui:Button Content="Add" Click="AddButton_Click" Width="50" Height="35" Margin="0,0,10,0"/>
-                <ui:Button Content="Modify" Click="ModifyButton_Click" Width="70" Height="35" Margin="0,0,10,0"/>
+                <ui:Button Content="Refresh" Click="RefreshButton_Click" Width="75" Height="35"/>
+                <ui:Button Content="Backup/Restore" Click="BackupRestoreButton_Click" Width="130" Height="35" Margin="10,0"/>
+                <ui:Button Content="Add" Click="AddButton_Click" Width="55" Height="35" Margin="0,0,10,0"/>
+                <ui:Button Content="Modify" Click="ModifyButton_Click" Width="75" Height="35" Margin="0,0,10,0"/>
                 <ui:Button Content="Delete" Click="DeleteButton_Click" Width="70" Height="35" Margin="0,0,10,0"/>
             <!--<ui:Button Content="Settings" Click="SettingsButton_Click" Width="80" Height="35" /> -->
             </StackPanel>
