@@ -43,7 +43,7 @@
 
         <!-- Bottom Buttons Row -->
         <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" 
-                   HorizontalAlignment="Center" Margin="10">
+                   HorizontalAlignment="Center" Margin="0,5,0,30">
             <ui:Button Name="BrowseButton" Margin="5" Width="80" 
                       Command="{Binding BrowsePathCommand}">Browse</ui:Button>
             <ui:Button Name="SaveButton" Margin="5" Width="80" 
