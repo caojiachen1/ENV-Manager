@@ -23,13 +23,13 @@
         <!-- Environment variable name label -->
         <TextBlock Text="Name:" Grid.Row="1" Grid.Column="0" Margin="10,10,5,5"/>
         <!-- Input field for environment variable name -->
-        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+        <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
                 Grid.Row="1" Grid.Column="1" Margin="5,10,10,5"/>
 
         <!-- Environment variable value label -->
         <TextBlock Text="Value:" Grid.Row="2" Grid.Column="0" Margin="10,20,5,10"/>
         <!-- Input field for environment variable value -->
-        <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
+        <ui:TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
                 Grid.Row="2" Grid.Column="1" Margin="5,20,10,10"/>
 
         <!-- Environment variable scope label -->

@@ -34,7 +34,7 @@
                  ScrollViewer.CanContentScroll="True" />
 
         <!-- New Path TextBox and Buttons Row -->
-        <TextBox Name="NewPathTextBox" Grid.Row="2" Grid.Column="0" Margin="10,5" 
+        <ui:TextBox Name="NewPathTextBox" Grid.Row="2" Grid.Column="0" Margin="10,5" 
                  Text="{Binding NewPathEntry, UpdateSourceTrigger=PropertyChanged}" />
         <ui:Button Name="AddButton" Grid.Row="2" Grid.Column="1" Margin="5" Width="60" 
                   Command="{Binding AddPathCommand}">Add</ui:Button>
