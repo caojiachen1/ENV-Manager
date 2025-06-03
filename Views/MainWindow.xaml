@@ -9,7 +9,7 @@
     xmlns:local="clr-namespace:WpfApp1"
     xmlns:viewmodels="clr-namespace:EnvVarViewer.ViewModels"
     Title="Environment Variable Manager" 
-    Height="450" Width="850"
+    Height="450" Width="1000"
     d:DesignHeight="450"
     d:DesignWidth="800"
     ui:Design.Background="#FF202020"
@@ -53,7 +53,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Search:" Foreground="White" Grid.Column="0" HorizontalAlignment="Left" Margin="10,10,0,10" Width="50" VerticalAlignment="Center"/>
+            <TextBlock x:Name="SearchLabel" Text="Search:" Foreground="White" Grid.Column="0" HorizontalAlignment="Left" Margin="10,10,0,10" Width="50" VerticalAlignment="Center"/>
             <ui:TextBox x:Name="SearchBox" PlaceholderText="Search..." VerticalAlignment="Center" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Margin="5,0,10,0"/>
             
             <ui:Button x:Name="SortOrderButton" Content="↑" Click="SortOrderButton_Click" Grid.Column="2" VerticalAlignment="Center" Margin="5,0,10,0" Width="40" Height="35"/>
@@ -64,7 +64,7 @@
                 <ui:Button Content="Add" Click="AddButton_Click" Width="55" Height="35" Margin="0,0,10,0"/>
                 <ui:Button Content="Modify" Click="ModifyButton_Click" Width="75" Height="35" Margin="0,0,10,0"/>
                 <ui:Button Content="Delete" Click="DeleteButton_Click" Width="70" Height="35" Margin="0,0,10,0"/>
-            <!--<ui:Button Content="Settings" Click="SettingsButton_Click" Width="80" Height="35" /> -->
+                <ui:Button Content="Settings" Click="SettingsButton_Click" Width="80" Height="35" />
             </StackPanel>
         </Grid>
 
@@ -76,11 +76,11 @@
                  MouseDoubleClick="EnvVarListBox_MouseDoubleClick" 
                  HorizontalAlignment="Stretch" 
                  Margin="10,10,0,20">
-            <ListBox.ContextMenu>
+            <!-- <ListBox.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Pin" Click="PinToTop_Click"/>
                 </ContextMenu>
-            </ListBox.ContextMenu>
+            </ListBox.ContextMenu> -->
         </ListBox>
 
         <!-- Environment Variables Tree View (Right Panel) -->

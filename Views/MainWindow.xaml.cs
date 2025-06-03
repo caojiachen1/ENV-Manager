@@ -451,6 +451,12 @@ namespace EnvVarViewer
                 }
             }
         }
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var settingsWindow = new Views.SettingsWindow();
+            settingsWindow.Owner = this;
+            settingsWindow.ShowDialog();
+        }
 
     }
-}
+}   

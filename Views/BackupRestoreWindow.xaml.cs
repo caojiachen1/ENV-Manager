@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Security.Principal;
 using EnvVarViewer.ViewModels;
+using EnvVarViewer.Services;
 
 namespace EnvVarViewer
 {
@@ -15,6 +16,7 @@ namespace EnvVarViewer
         public string selectedBackupFile = string.Empty;
         private Dictionary<string, string> previewUserVars = new Dictionary<string, string>();
         private Dictionary<string, string> previewSystemVars = new Dictionary<string, string>();
+        private readonly ThemeService _themeService = ThemeService.Instance;
 
         /// <summary>
         /// Initializes a new instance of the BackupRestoreWindow
@@ -26,6 +28,37 @@ namespace EnvVarViewer
             this.MainWindowViewModel = viewModel;
             ViewModel = new ViewModels.BackupRestoreWindowViewModel(viewModel);
             DataContext = ViewModel;
+            Loaded += BackupRestoreWindow_Loaded;
+            _themeService.ThemeChanged += OnThemeChanged;
+        }
+
+        private void BackupRestoreWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            ApplyThemeToLabels(_themeService.CurrentTheme);
+        }
+
+        private void OnThemeChanged(string theme)
+        {
+            Dispatcher.Invoke(() => ApplyThemeToLabels(theme));
+        }
+
+        private void ApplyThemeToLabels(string theme)
+        {
+            var labelColor = theme == "Light" ? System.Windows.Media.Brushes.Black : System.Windows.Media.Brushes.White;
+            if (BackupStatusTextBlock != null)
+                BackupStatusTextBlock.Foreground = labelColor;
+            if (RestoreStatusText != null)
+                RestoreStatusText.Foreground = labelColor;
+            if (PreviewTextBlock != null)
+                PreviewTextBlock.Foreground = labelColor;
+            
+            // Update GroupBox headers
+            if (BackupOptionsGroupBox != null)
+                BackupOptionsGroupBox.Foreground = labelColor;
+            if (RestoreOptionsGroupBox != null)
+                RestoreOptionsGroupBox.Foreground = labelColor;
+            if (BackupPreviewGroupBox != null)
+                BackupPreviewGroupBox.Foreground = labelColor;
         }
 
         /// <summary>
