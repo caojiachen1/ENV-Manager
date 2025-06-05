@@ -45,6 +45,8 @@ namespace EnvVarViewer
         private void ApplyThemeToLabels(string theme)
         {
             var labelColor = theme == "Light" ? System.Windows.Media.Brushes.Black : System.Windows.Media.Brushes.White;
+            var borderColor = theme == "Light" ? System.Windows.Media.Brushes.Black : System.Windows.Media.Brushes.White;
+            
             if (BackupStatusTextBlock != null)
                 BackupStatusTextBlock.Foreground = labelColor;
             if (RestoreStatusText != null)
@@ -52,13 +54,22 @@ namespace EnvVarViewer
             if (PreviewTextBlock != null)
                 PreviewTextBlock.Foreground = labelColor;
             
-            // Update GroupBox headers
+            // Update GroupBox headers and borders
             if (BackupOptionsGroupBox != null)
+            {
                 BackupOptionsGroupBox.Foreground = labelColor;
+                BackupOptionsGroupBox.BorderBrush = borderColor;
+            }
             if (RestoreOptionsGroupBox != null)
+            {
                 RestoreOptionsGroupBox.Foreground = labelColor;
+                RestoreOptionsGroupBox.BorderBrush = borderColor;
+            }
             if (BackupPreviewGroupBox != null)
+            {
                 BackupPreviewGroupBox.Foreground = labelColor;
+                BackupPreviewGroupBox.BorderBrush = borderColor;
+            }
         }
 
         /// <summary>
