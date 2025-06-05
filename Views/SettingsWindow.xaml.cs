@@ -21,7 +21,6 @@ namespace EnvVarViewer.Views
         private void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
         {
             LoadCurrentTheme();
-            //ApplyThemeColors(_themeService.CurrentTheme);
             _isInitializing = false;
         }
 
@@ -61,9 +60,12 @@ namespace EnvVarViewer.Views
 
             if (sender is System.Windows.Controls.RadioButton radio && radio.Tag != null)
             {
-                string theme = radio.Tag.ToString();
-                _themeService.SetTheme(theme);
-                ApplyThemeSpecificStyling(theme);
+                string? theme = radio.Tag?.ToString();
+                if (!string.IsNullOrEmpty(theme))
+                {
+                    _themeService.SetTheme(theme);
+                    ApplyThemeSpecificStyling(theme);
+                }
             }
         }
 
@@ -90,7 +92,7 @@ namespace EnvVarViewer.Views
             }
         }
 
-        private T FindVisualChild<T>(DependencyObject parent, string name) where T : DependencyObject
+        private T? FindVisualChild<T>(DependencyObject parent, string name) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
@@ -105,7 +107,7 @@ namespace EnvVarViewer.Views
             return null;
         }
 
-        private System.Windows.Controls.TextBlock FindTextBlockWithText(DependencyObject parent, string text)
+        private System.Windows.Controls.TextBlock? FindTextBlockWithText(DependencyObject parent, string text)
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {

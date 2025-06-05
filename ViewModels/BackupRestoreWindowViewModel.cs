@@ -15,18 +15,16 @@ namespace EnvVarViewer.ViewModels
 {
     public class BackupRestoreWindowViewModel : ViewModelBase
     {
-        private string _selectedBackupFile;
+        private string? _selectedBackupFile;
         private Dictionary<string, string> _previewUserVars;
         private Dictionary<string, string> _previewSystemVars;
         private bool _backupUserVars = true;
         private bool _backupSystemVars = true;
         private bool _restoreUserVars = true;
         private bool _restoreSystemVars = true;
-        // Remove individual status fields - use base StatusMessage
-        public event PropertyChangedEventHandler PropertyChanged;
 
-        private AsyncRelayCommand _backupCommand;
-        private AsyncRelayCommand _restoreCommand;
+        private AsyncRelayCommand? _backupCommand;
+        private AsyncRelayCommand? _restoreCommand;
         private bool _overwriteExisting = true;
 
         public ICommand BackupCommand => _backupCommand ??= new AsyncRelayCommand(ExecuteBackupAsync);
@@ -38,7 +36,7 @@ namespace EnvVarViewer.ViewModels
             set => SetField(ref _overwriteExisting, value);
         }
 
-        public string SelectedBackupFile
+        public string? SelectedBackupFile
         {
             get => _selectedBackupFile;
             set => SetField(ref _selectedBackupFile, value);
@@ -77,16 +75,12 @@ namespace EnvVarViewer.ViewModels
             _previewSystemVars = new Dictionary<string, string>();
         }
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
             field = value;
-            OnPropertyChanged(propertyName);
+            if (propertyName != null)
+                OnPropertyChanged(propertyName);
             return true;
         }
 
@@ -285,8 +279,71 @@ namespace EnvVarViewer.ViewModels
                     {
                         CancellationTokenSource.Token.ThrowIfCancellationRequested();
                         
-                        // ... existing preview logic ...
-                        // (Keep the existing preview parsing logic but add cancellation checks)
+                        if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+                            continue;
+
+                        if (isTxtFormat)
+                        {
+                            if (line.Equals("[User Variables]", StringComparison.OrdinalIgnoreCase))
+                            {
+                                isInUserSection = true;
+                                isInSystemSection = false;
+                                continue;
+                            }
+                            else if (line.Equals("[System Variables]", StringComparison.OrdinalIgnoreCase))
+                            {
+                                isInUserSection = false;
+                                isInSystemSection = true;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (line.Equals("[USER_VARIABLES]", StringComparison.OrdinalIgnoreCase))
+                            {
+                                isInUserSection = true;
+                                isInSystemSection = false;
+                                continue;
+                            }
+                            else if (line.Equals("[SYSTEM_VARIABLES]", StringComparison.OrdinalIgnoreCase))
+                            {
+                                isInUserSection = false;
+                                isInSystemSection = true;
+                                continue;
+                            }
+                        }
+
+                        if (line.Contains('='))
+                        {
+                            var parts = line.Split('=', 2);
+                            if (parts.Length == 2)
+                            {
+                                string key = parts[0].Trim();
+                                string value = parts[1];
+
+                                if (!isTxtFormat && key.Contains(':'))
+                                {
+                                    var typeParts = key.Split(':', 2);
+                                    if (typeParts.Length == 2)
+                                    {
+                                        string type = typeParts[0].ToUpper();
+                                        key = typeParts[1];
+                                        
+                                        if (type == "USER")
+                                            previewUserVars[key] = value;
+                                        else if (type == "SYSTEM")
+                                            previewSystemVars[key] = value;
+                                    }
+                                }
+                                else if (isTxtFormat)
+                                {
+                                    if (isInUserSection)
+                                        previewUserVars[key] = value;
+                                    else if (isInSystemSection)
+                                        previewSystemVars[key] = value;
+                                }
+                            }
+                        }
                     }
 
                     return (previewText, previewUserVars, previewSystemVars);
@@ -296,7 +353,7 @@ namespace EnvVarViewer.ViewModels
             {
                 // Preview loading was cancelled
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Handle preview loading errors
             }

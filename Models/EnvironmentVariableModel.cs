@@ -59,7 +59,7 @@ namespace EnvVarViewer.Models
             
             if (name.Contains('=') || name.Contains('\0'))
                 throw new ArgumentException("Environment variable name contains invalid characters", nameof(name));
-
+            
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -82,7 +82,7 @@ namespace EnvVarViewer.Models
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentException("Environment variable name cannot be null or empty", nameof(name));
-
+            
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();

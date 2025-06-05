@@ -44,7 +44,7 @@ namespace EnvVarViewer
             EnvVarTreeView.MouseDoubleClick += EnvVarTreeView_MouseDoubleClick;
         }
 
-        private void OnEnvVarListUpdated(object sender, EventArgs e)
+        private void OnEnvVarListUpdated(object? sender, EventArgs e)
         {
             // Batch UI updates to improve performance with lower priority
             Dispatcher.BeginInvoke(() =>
@@ -63,23 +63,26 @@ namespace EnvVarViewer
             if (EnvVarListBox.SelectedItem != null)
             {
                 // Get the selected environment variable name
-                string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                string selectedVar = EnvVarListBox.SelectedItem.ToString() ?? string.Empty;
                 if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
                 {
                     var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
                     var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
 
-                    userItem.Items.Clear();
-                    systemItem.Items.Clear();
-
-                    if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
+                    if (userItem != null && systemItem != null)
                     {
-                        userItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.UserEnvVars[selectedVar]));
-                    }
+                        userItem.Items.Clear();
+                        systemItem.Items.Clear();
 
-                    if (ViewModel.SystemEnvVars.ContainsKey(selectedVar))
-                    {
-                        systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.SystemEnvVars[selectedVar]));
+                        if (ViewModel.UserEnvVars.ContainsKey(selectedVar))
+                        {
+                            userItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.UserEnvVars[selectedVar]));
+                        }
+
+                        if (ViewModel.SystemEnvVars.ContainsKey(selectedVar))
+                        {
+                            systemItem.Items.Add(new KeyValuePair<string, string>(selectedVar, ViewModel.SystemEnvVars[selectedVar]));
+                        }
                     }
 
                     ViewModel.SetStatusMessage($"Selected variable: {selectedVar}");
@@ -109,7 +112,7 @@ namespace EnvVarViewer
                 ViewModel.SetStatusMessage("Refreshing environment variables...");
                 
                 // Store currently selected variable before refresh
-                string previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
+                string? previouslySelectedVarKey = EnvVarListBox.SelectedItem as string;
 
                 await ViewModel.LoadEnvVarsAsync().ConfigureAwait(false); // Optimize with ConfigureAwait
 
@@ -121,8 +124,8 @@ namespace EnvVarViewer
                     // Clear the TreeView display first. If no item is re-selected, it remains empty.
                     var userItem = EnvVarTreeView.Items[0] as TreeViewItem;
                     var systemItem = EnvVarTreeView.Items[1] as TreeViewItem;
-                    userItem.Items.Clear();
-                    systemItem.Items.Clear();
+                    userItem?.Items.Clear();
+                    systemItem?.Items.Clear();
 
                     if (!string.IsNullOrEmpty(previouslySelectedVarKey))
                     {
@@ -186,7 +189,7 @@ namespace EnvVarViewer
         {
             if (EnvVarListBox.SelectedItem != null)
             {
-                string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                string selectedVar = EnvVarListBox.SelectedItem.ToString() ?? string.Empty;
                 if (ViewModel.SystemEnvVars.ContainsKey(selectedVar) || ViewModel.UserEnvVars.ContainsKey(selectedVar))
                 {
                     string value;
@@ -248,7 +251,7 @@ namespace EnvVarViewer
 
                 if (EnvVarListBox.SelectedItem != null)
                 {
-                    string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                    string selectedVar = EnvVarListBox.SelectedItem.ToString() ?? string.Empty;
                     ViewModel.SetStatusMessage($"Opening modify window for {selectedVar}...");
                     
                     var selectedNode = GetSelectedTreeViewNode();
@@ -257,14 +260,14 @@ namespace EnvVarViewer
                     {
                         bool isUserNode = selectedNode.Header.ToString() == "User";
                         string value = isUserNode ?
-                                        (ViewModel.UserEnvVars.ContainsKey(selectedVar) ? ViewModel.UserEnvVars[selectedVar] : null) :
-                                        (ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : null);
+                                        (ViewModel.UserEnvVars.ContainsKey(selectedVar) ? ViewModel.UserEnvVars[selectedVar] : string.Empty) :
+                                        (ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : string.Empty);
 
                         await OpenModifyWindowAsync(selectedVar, value, isUserNode);
                     }
                     else
                     {
-                        string value;
+                        string? value;
                         bool isUserVar = ViewModel.UserEnvVars.ContainsKey(selectedVar);
                         
                         if (isUserVar)
@@ -324,9 +327,10 @@ namespace EnvVarViewer
                 };
                 modifyWindow.ShowDialog();
             }
+            await Task.CompletedTask;
         }
 
-        private TreeViewItem GetSelectedTreeViewNode()
+        private TreeViewItem? GetSelectedTreeViewNode()
         {
             var selectedItem = EnvVarTreeView.SelectedItem;
 
@@ -347,12 +351,12 @@ namespace EnvVarViewer
             return null;
         }
 
-        private TreeViewItem GetParentTreeViewItem(KeyValuePair<string, string> keyValuePair)
+        private TreeViewItem? GetParentTreeViewItem(KeyValuePair<string, string> keyValuePair)
         {
             return FindParentTreeViewItem(keyValuePair);
         }
 
-        private TreeViewItem FindParentTreeViewItem(KeyValuePair<string, string> keyValuePair)
+        private TreeViewItem? FindParentTreeViewItem(KeyValuePair<string, string> keyValuePair)
         {
             foreach (var item in EnvVarTreeView.Items)
             {
@@ -383,7 +387,7 @@ namespace EnvVarViewer
                 
                 if (EnvVarListBox.SelectedItem != null)
                 {
-                    string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                    string selectedVar = EnvVarListBox.SelectedItem.ToString() ?? string.Empty;
                     if (ViewModel.UserEnvVars.ContainsKey(selectedVar) || ViewModel.SystemEnvVars.ContainsKey(selectedVar))
                     {
                         ViewModel.SetStatusMessage($"Confirming deletion of {selectedVar}...");
@@ -440,7 +444,7 @@ namespace EnvVarViewer
         {
             if (EnvVarListBox.SelectedItem != null)
             {
-                string selectedVar = EnvVarListBox.SelectedItem.ToString();
+                string selectedVar = EnvVarListBox.SelectedItem.ToString() ?? string.Empty;
                 var items = EnvVarListBox.ItemsSource as IEnumerable<string>;
                 if (items != null && items.Contains(selectedVar))
                 {

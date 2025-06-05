@@ -9,9 +9,9 @@ namespace EnvVarViewer.ViewModels
     /// </summary>
     public class ConfirmDeleteViewModel : ViewModelBase
     {
-        private string _variableName;
-        private string _variableDescription;
-        private string _warningMessage;
+        private string _variableName = string.Empty;
+        private string _variableDescription = string.Empty;
+        private string _warningMessage = string.Empty;
         private bool _canConfirm = true;
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Action to close the confirmation window
         /// </summary>
-        public Action CloseWindow { get; set; }
+        public Action? CloseWindow { get; set; }
 
         /// <summary>
         /// Dialog result (true=confirmed, false=cancelled)

@@ -162,27 +162,27 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Sets an environment variable asynchronously
         /// </summary>
-        public async Task<bool> SetEnvVarAsync(string name, string value, EnvironmentVariableTarget target)
-        {
-            if (!ValidateInput(name, "Variable name") || !ValidateInput(value, "Variable value"))
-                return false;
+        // public async Task<bool> SetEnvVarAsync(string name, string value, EnvironmentVariableTarget target)
+        // {
+        //     if (!ValidateInput(name, "Variable name") || !ValidateInput(value, "Variable value"))
+        //         return false;
 
-            try
-            {
-                await ExecuteAsync(async cancellationToken =>
-                {
-                    await _envVarModel.SetEnvVarAsync(name, value, target, cancellationToken).ConfigureAwait(false);
-                    await LoadEnvVarsAsync().ConfigureAwait(false);
-                }, $"Setting environment variable '{name}'...", "Failed to set environment variable");
+        //     try
+        //     {
+        //         await ExecuteAsync(async cancellationToken =>
+        //         {
+        //             await _envVarModel.SetEnvVarAsync(name, value, target, cancellationToken).ConfigureAwait(false);
+        //             await LoadEnvVarsAsync().ConfigureAwait(false);
+        //         }, $"Setting environment variable '{name}'...", "Failed to set environment variable");
 
-                SetStatusMessage($"Environment variable '{name}' set successfully");
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        //         SetStatusMessage($"Environment variable '{name}' set successfully");
+        //         return true;
+        //     }
+        //     catch
+        //     {
+        //         return false;
+        //     }
+        // }
 
         /// <summary>
         /// Deletes an environment variable asynchronously
@@ -212,26 +212,26 @@ namespace EnvVarViewer.ViewModels
         /// <summary>
         /// Cancels all ongoing async operations
         /// </summary>
-        public void CancelOperations()
-        {
-            try
-            {
-                CancellationTokenSource?.Cancel();
-                SetStatusMessage("Operations cancelled");
-            }
-            catch (Exception ex)
-            {
-                SetStatusMessage($"Error cancelling operations: {ex.Message}", true);
-            }
-        }
+        // public void CancelOperations()
+        // {
+        //     try
+        //     {
+        //         CancellationTokenSource?.Cancel();
+        //         SetStatusMessage("Operations cancelled");
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         SetStatusMessage($"Error cancelling operations: {ex.Message}", true);
+        //     }
+        // }
 
         /// <summary>
         /// Refreshes the environment variables list asynchronously
         /// </summary>
-        public async Task RefreshAsync()
-        {
-            await LoadEnvVarsAsync();
-        }
+        // public async Task RefreshAsync()
+        // {
+        //     await LoadEnvVarsAsync();
+        // }
 
         // Synchronous versions for backward compatibility
         public void LoadEnvVars() => _ = LoadEnvVarsAsync();
@@ -251,18 +251,18 @@ namespace EnvVarViewer.ViewModels
         /// </summary>
         /// <param name="isLoading">Whether the application is loading</param>
         /// <param name="statusMessage">Optional status message to display</param>
-        private void SetLoadingState(bool isLoading, string statusMessage = null)
-        {
-            IsLoading = isLoading;
-            if (!string.IsNullOrEmpty(statusMessage))
-            {
-                SetStatusMessage(statusMessage);
-            }
-            else if (!isLoading)
-            {
-                SetStatusMessage("Ready");
-            }
-        }
+        // private void SetLoadingState(bool isLoading, string? statusMessage = null)
+        // {
+        //     IsLoading = isLoading;
+        //     if (!string.IsNullOrEmpty(statusMessage))
+        //     {
+        //         SetStatusMessage(statusMessage);
+        //     }
+        //     else if (!isLoading)
+        //     {
+        //         SetStatusMessage("Ready");
+        //     }
+        // }
 
         /// <summary>
         /// Attempts to elevate application privileges by restarting as administrator asynchronously
@@ -295,7 +295,14 @@ namespace EnvVarViewer.ViewModels
         {
             if (!_envVarModel.IsAdministrator())
             {
-                var processInfo = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName)
+                var fileName = Process.GetCurrentProcess().MainModule?.FileName;
+                if (fileName == null)
+                {
+                    SetStatusMessage("Unable to determine application path");
+                    return;
+                }
+                
+                var processInfo = new ProcessStartInfo(fileName)
                 {
                     Verb = "runas",
                     UseShellExecute = true
