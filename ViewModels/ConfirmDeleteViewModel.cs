@@ -107,12 +107,12 @@ namespace EnvVarViewer.ViewModels
             {
                 case "JAVA_HOME":
                     VariableDescription = "Java Development Kit (JDK) installation path, used for Java application development and runtime environment.";
-                    WarningMessage = "Deleting this variable may affect Java applications running!";
+                    WarningMessage = "Deleting this variable may affect Java applications!";
                     break;
                 case "PYTHON_HOME":
                 case "PYTHONPATH":
                     VariableDescription = "Python interpreter path and module search path, used for Python application runtime environment.";
-                    WarningMessage = "Deleting this variable may affect Python applications running!";
+                    WarningMessage = "Deleting this variable may affect Python applications!";
                     break;
                 case "MAVEN_HOME":
                 case "M2_HOME":
@@ -122,7 +122,7 @@ namespace EnvVarViewer.ViewModels
                 case "NODE_PATH":
                 case "NODE_HOME":
                     VariableDescription = "Node.js runtime environment path, used for JavaScript/Node.js application development.";
-                    WarningMessage = "Deleting this variable may affect Node.js applications running!";
+                    WarningMessage = "Deleting this variable may affect Node.js applications!";
                     break;
                 case "ANDROID_HOME":
                 case "ANDROID_SDK_ROOT":
