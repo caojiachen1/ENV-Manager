@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using EnvVarViewer.Services;
+using System.Threading.Tasks;
 
 namespace EnvVarViewer
 {
@@ -52,7 +53,6 @@ namespace EnvVarViewer
         private void ApplyThemeToLabels(string theme)
         {
             var labelColor = theme == "Light" ? System.Windows.Media.Brushes.Black : System.Windows.Media.Brushes.White;
-            // Assuming the labels have x:Name set in XAML: NameLabel, ValueLabel, ScopeLabel
             var nameLabel = this.FindName("NameLabel") as TextBlock;
             var valueLabel = this.FindName("ValueLabel") as TextBlock;
             var scopeLabel = this.FindName("ScopeLabel") as TextBlock;

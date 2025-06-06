@@ -93,35 +93,72 @@ namespace EnvVarViewer.ViewModels
                 return;
             }
 
-            await ExecuteAsync(async cancellationToken =>
+            var target = SelectedScopeIndex switch
             {
-                var target = SelectedScopeIndex switch
-                {
-                    0 => EnvironmentVariableTarget.User,
-                    1 => EnvironmentVariableTarget.Machine,
-                    _ => EnvironmentVariableTarget.User
-                };
+                0 => EnvironmentVariableTarget.User,
+                1 => EnvironmentVariableTarget.Machine,
+                _ => EnvironmentVariableTarget.User
+            };
 
-                // Check if variable already exists in current scope
-                var targetDict = target == EnvironmentVariableTarget.User ? _userEnvVars : _systemEnvVars;
-                if (targetDict.ContainsKey(Name!))
+            // Check if variable already exists in current scope
+            var targetDict = target == EnvironmentVariableTarget.User ? _userEnvVars : _systemEnvVars;
+            if (targetDict.ContainsKey(Name!))
+            {
+                var scopeName = target == EnvironmentVariableTarget.User ? "User" : "System";
+                SetErrorState($"Environment variable '{Name}' already exists in {scopeName} scope");
+                return;
+            }
+
+            // Close window immediately after validation
+            CloseWindow?.Invoke(this, EventArgs.Empty);
+
+            // Execute the operation asynchronously in background
+            _ = Task.Run(async () =>
+            {
+                try
                 {
-                    var scopeName = target == EnvironmentVariableTarget.User ? "User" : "System";
-                    throw new InvalidOperationException($"Environment variable '{Name}' already exists in {scopeName} scope");
+                    // Show status message on UI thread
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Adding environment variable '{Name}'...", false);
+                    });
+
+                    var model = new Models.EnvironmentVariableModel();
+                    await model.SetEnvVarAsync(Name!, Value!, target, CancellationToken).ConfigureAwait(false);
+                    
+                    // Update local dictionary
+                    targetDict[Name!] = Value!;
+                    
+                    // Update UI on dispatcher thread
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Successfully added environment variable '{Name}'");
+                        EnvVarAdded?.Invoke(this, EventArgs.Empty);
+                    });
                 }
-
-                var model = new Models.EnvironmentVariableModel();
-                await model.SetEnvVarAsync(Name!, Value!, target, cancellationToken).ConfigureAwait(false);
-                
-                // Update local dictionary
-                targetDict[Name!] = Value!;
-                
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                catch (OperationCanceledException)
                 {
-                    EnvVarAdded?.Invoke(this, EventArgs.Empty);
-                    CloseWindow?.Invoke(this, EventArgs.Empty);
-                });
-            }, "Adding environment variable...", "Failed to add environment variable");
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage("Operation was cancelled", true);
+                    });
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Access denied: {ex.Message}", true);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Failed to add environment variable: {ex.Message}", true);
+                    });
+                    System.Diagnostics.Debug.WriteLine($"Error in {GetType().Name}: {ex}");
+                }
+            });
         }
     }
 }

@@ -121,41 +121,79 @@ namespace EnvVarViewer.ViewModels
             if (!ValidateInput(Name, "Variable name") || !ValidateInput(Value, "Variable value"))
                 return;
 
-            await ExecuteAsync(async cancellationToken =>
+            // Close window immediately after validation
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                var target = SelectedScopeIndex switch
-                {
-                    0 => EnvironmentVariableTarget.User,
-                    1 => EnvironmentVariableTarget.Machine,
-                    _ => EnvironmentVariableTarget.User
-                };
+                CloseWindow?.Invoke(this, EventArgs.Empty);
+            });
 
-                var model = new Models.EnvironmentVariableModel();
-                
-                // Delete old variable if name changed
-                if (_originalName != Name)
+            // Execute the operation asynchronously in background
+            _ = Task.Run(async () =>
+            {
+                try
                 {
-                    await model.DeleteEnvVarAsync(_originalName, target, cancellationToken).ConfigureAwait(false);
+                    // Show status message on UI thread
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Modifying environment variable '{Name}'...", false);
+                    });
+
+                    var target = SelectedScopeIndex switch
+                    {
+                        0 => EnvironmentVariableTarget.User,
+                        1 => EnvironmentVariableTarget.Machine,
+                        _ => EnvironmentVariableTarget.User
+                    };
+
+                    var model = new Models.EnvironmentVariableModel();
+                    
+                    // Delete old variable if name changed
+                    if (_originalName != Name)
+                    {
+                        await model.DeleteEnvVarAsync(_originalName, target, CancellationToken).ConfigureAwait(false);
+                    }
+                    
+                    // Set new variable
+                    await model.SetEnvVarAsync(Name!, Value!, target, CancellationToken).ConfigureAwait(false);
+                    
+                    // Update local dictionaries
+                    var targetDict = target == EnvironmentVariableTarget.User ? _userEnvVars : _systemEnvVars;
+                    targetDict[Name!] = Value!;
+                    
+                    if (_originalName != Name && targetDict.ContainsKey(_originalName))
+                    {
+                        targetDict.Remove(_originalName);
+                    }
+                    
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Successfully modified environment variable '{Name}'");
+                        EnvVarModified?.Invoke(this, EventArgs.Empty);
+                    });
                 }
-                
-                // Set new variable
-                await model.SetEnvVarAsync(Name!, Value!, target, cancellationToken).ConfigureAwait(false);
-                
-                // Update local dictionaries
-                var targetDict = target == EnvironmentVariableTarget.User ? _userEnvVars : _systemEnvVars;
-                targetDict[Name!] = Value!;
-                
-                if (_originalName != Name && targetDict.ContainsKey(_originalName))
+                catch (OperationCanceledException)
                 {
-                    targetDict.Remove(_originalName);
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage("Operation was cancelled", true);
+                    });
                 }
-                
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                catch (UnauthorizedAccessException ex)
                 {
-                    EnvVarModified?.Invoke(this, EventArgs.Empty);
-                    CloseWindow?.Invoke(this, EventArgs.Empty);
-                });
-            }, "Saving environment variable...", "Failed to save environment variable");
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Access denied: {ex.Message}", true);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SetStatusMessage($"Failed to modify environment variable: {ex.Message}", true);
+                    });
+                    System.Diagnostics.Debug.WriteLine($"Error in {GetType().Name}: {ex}");
+                }
+            });
         }
     }
 }

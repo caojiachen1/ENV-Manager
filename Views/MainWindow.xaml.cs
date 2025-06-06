@@ -174,10 +174,28 @@ namespace EnvVarViewer
         {
             if (!await EnsureAdminPrivilegesAsync()) return;
             
-            ViewModel.SetStatusMessage("Opening add variable window...");
-            var addWindow = new AddEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars);
-            addWindow.EnvVarAdded += async (s, ev) => await ViewModel.UpdateListBoxAsync();
-            addWindow.ShowDialog();
+            try
+            {
+                ViewModel.SetStatusMessage("Opening add variable window...");
+                
+                var addWindow = new AddEnvVarWindow(ViewModel.UserEnvVars, ViewModel.SystemEnvVars);
+                
+                // Use proper async event handling without blocking
+                addWindow.EnvVarAdded += async (s, ev) => 
+                {
+                    await Task.Run(async () =>
+                    {
+                        await ViewModel.UpdateListBoxAsync().ConfigureAwait(false);
+                    });
+                };
+                
+                // Show dialog on UI thread without awaiting
+                addWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                ViewModel.SetStatusMessage($"Error opening add window: {ex.Message}", true);
+            }
         }
 
         private async Task RefreshAsync()
@@ -243,11 +261,17 @@ namespace EnvVarViewer
             return "Unknown";
         }
 
-        private async void ModifyButton_Click(object sender, RoutedEventArgs e)
+        private void ModifyButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (!await EnsureAdminPrivilegesAsync()) return;
+                // Use synchronous admin check for immediate UI feedback
+                if (!ViewModel.IsAdministrator())
+                {
+                    ViewModel.SetStatusMessage("Elevating to administrator privileges...");
+                    ViewModel.Elevate();
+                    return;
+                }
 
                 if (EnvVarListBox.SelectedItem != null)
                 {
@@ -263,7 +287,7 @@ namespace EnvVarViewer
                                         (ViewModel.UserEnvVars.ContainsKey(selectedVar) ? ViewModel.UserEnvVars[selectedVar] : string.Empty) :
                                         (ViewModel.SystemEnvVars.ContainsKey(selectedVar) ? ViewModel.SystemEnvVars[selectedVar] : string.Empty);
 
-                        await OpenModifyWindowAsync(selectedVar, value, isUserNode);
+                        OpenModifyWindow(selectedVar, value, isUserNode);
                     }
                     else
                     {
@@ -285,7 +309,7 @@ namespace EnvVarViewer
                             return;
                         }
 
-                        await OpenModifyWindowAsync(selectedVar, value, isUserVar);
+                        OpenModifyWindow(selectedVar, value, isUserVar);
                     }
                 }
             }
@@ -295,7 +319,7 @@ namespace EnvVarViewer
             }
         }
 
-        private async Task OpenModifyWindowAsync(string selectedVar, string value, bool isUserVar)
+        private void OpenModifyWindow(string selectedVar, string value, bool isUserVar)
         {
             if (selectedVar.ToLower() == "path")
             {
@@ -327,7 +351,6 @@ namespace EnvVarViewer
                 };
                 modifyWindow.ShowDialog();
             }
-            await Task.CompletedTask;
         }
 
         private TreeViewItem? GetSelectedTreeViewNode()

@@ -21,19 +21,19 @@
         </Grid.ColumnDefinitions>
 
         <!-- Environment variable name label -->
-        <TextBlock x:Name="NameLabel" Text="Name:" Grid.Row="1" Grid.Column="0" Margin="10,10,5,5"/>
+        <TextBlock x:Name="NameLabel" Text="Name:" Grid.Row="1" Grid.Column="0" Margin="10,10,5,5" VerticalAlignment="Center"/>
         <!-- Input field for environment variable name -->
         <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
                 Grid.Row="1" Grid.Column="1" Margin="5,10,10,5"/>
 
         <!-- Environment variable value label -->
-        <TextBlock x:Name="ValueLabel" Text="Value:" Grid.Row="2" Grid.Column="0" Margin="10,20,5,10"/>
+        <TextBlock x:Name="ValueLabel" Text="Value:" Grid.Row="2" Grid.Column="0" Margin="10,20,5,10" VerticalAlignment="Center"/>
         <!-- Input field for environment variable value -->
         <ui:TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
                 Grid.Row="2" Grid.Column="1" Margin="5,20,10,10"/>
 
         <!-- Environment variable scope label -->
-        <TextBlock x:Name="ScopeLabel" Text="Scope:" Grid.Row="3" Grid.Column="0" Margin="10,18,5,0"/>
+        <TextBlock x:Name="ScopeLabel" Text="Scope:" Grid.Row="3" Grid.Column="0" Margin="10,18,5,0" VerticalAlignment="Center"/>
         <!-- Dropdown selector for environment variable scope (Process/User/System) -->
         <ComboBox SelectedIndex="{Binding SelectedScopeIndex}" 
                   Grid.Row="3" Grid.Column="1" Margin="5,18,10,0">
