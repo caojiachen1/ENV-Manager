@@ -1,11 +1,7 @@
-.vs/
-.vscode/
-.codebuddy/
-.gitignore
+.*/
 bin/
 obj/
 publish/
-.trae/
 Backup/
 Resources/
 Language/
